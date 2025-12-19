@@ -58,6 +58,9 @@ Supports **Databricks-hosted Claude Sonnet / Haiku models**, or any LLM served f
 ### ✔ Supports Azure Anthropic models
 Route Claude Code requests into Azure's `/anthropic/v1/messages` endpoint.
 
+### ✔ Supports Azure OpenAI models
+Connect to Azure OpenAI deployments (GPT-4o, etc.) with full tool calling support.
+
 ### ✔ Supports OpenRouter (100+ models)
 Access GPT-4o, Claude, Gemini, Llama, and more through a single unified API with full tool calling support.
 
@@ -219,6 +222,17 @@ AZURE_ANTHROPIC_VERSION=2023-06-01
 WORKSPACE_ROOT=/path/to/repo
 PORT=8080
 ```
+
+## Azure OpenAI Setup
+
+```env
+MODEL_PROVIDER=azure-openai
+AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+AZURE_OPENAI_API_KEY=<api-key>
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+PORT=8080
+```
+
 
 ## OpenRouter Setup
 
@@ -422,6 +436,28 @@ curl http://localhost:8080/v1/messages \
     }
   }'
 ```
+
+---
+
+
+# 🤖 ACE Framework Working Nature
+
+Lynkr's agentic architecture is inspired by the **Autonomous Cognitive Entity (ACE) Framework**, specifically implementing the **Reflector** pattern to enable self-improving capabilities.
+
+### The Agentic Loop
+
+1.  **Input Processing**: The **Orchestrator** receives natural language intent from the user.
+2.  **Execution (Agent Model)**: The system executes tools (Git, Search, File Ops) to achieve the goal.
+3.  **Reflection (Reflector Role)**: After execution types, the `Reflector` agent analyzes the transcript to extract "skills" and optimize future performance.
+
+### The Reflector
+The Reflector (`src/agents/reflector.js`) is an introspective component that analyzes:
+*   **Tool Usage Patterns**: Identifying effective tool combinations (e.g., "Search -> Read -> Fix").
+*   **Efficiency**: Calculating step-count and token efficiency.
+*   **Error Handling**: Learning from recovered errors to suggest robust fallback strategies.
+*   **Task Patterns**: Recognizing recurring task types (Refactoring, Testing, Documentation) and their optimal workflows.
+
+This "working nature" allows Lynkr to not just execute commands, but to **learn from interaction**, continuously refining its internal heuristics for tool selection and planning.
 
 ---
 

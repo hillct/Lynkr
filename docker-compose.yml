@@ -5,6 +5,7 @@ services:
   lynkr:
     build: .
     container_name: lynkr
+    image: lynkr:2.0.0
     ports:
       - "8080:8080"
       - "8888:8888"
@@ -44,6 +45,8 @@ services:
       # ============================================================
       # OPENROUTER CONFIGURATION
       # ============================================================
+      # Get API key from: https://openrouter.ai/keys
+      # Popular models: openai/gpt-4o-mini, anthropic/claude-3.5-sonnet
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-amazon/nova-2-lite-v1:free}
       OPENROUTER_ENDPOINT: ${OPENROUTER_ENDPOINT:-https://openrouter.ai/api/v1/chat/completions}
@@ -53,12 +56,13 @@ services:
       # AZURE OPENAI CONFIGURATION
       # ============================================================
       # Required when MODEL_PROVIDER=azure-openai
-      # Deployment options: gpt-4o, gpt-4o-mini, gpt-5-chat, o1-preview, o3-mini
+      # IMPORTANT: Use FULL endpoint URL including deployment path and API version
+      # Format: https://YOUR-RESOURCE.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT/chat/completions?api-version=2025-01-01-preview
       # Get credentials from: https://portal.azure.com → Azure OpenAI → Keys and Endpoint
+      # Deployment options: gpt-4o, gpt-4o-mini, gpt-5-chat, o1-preview, o3-mini
       AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
       AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
       AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
-      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-08-01-preview}
 
       # ============================================================
       # HYBRID ROUTING & FALLBACK
@@ -88,14 +92,41 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       WEB_SEARCH_ENDPOINT: ${WEB_SEARCH_ENDPOINT:-http://localhost:8888/search}
       WORKSPACE_ROOT: /workspace
+
+      # ============================================================
+      # PRODUCTION HARDENING (OPTIONAL)
+      # ============================================================
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:-5}
+      CIRCUIT_BREAKER_TIMEOUT: ${CIRCUIT_BREAKER_TIMEOUT:-60000}
+      LOAD_SHEDDING_MEMORY_THRESHOLD: ${LOAD_SHEDDING_MEMORY_THRESHOLD:-0.85}
+
     volumes:
       - ./data:/app/data  # Persist SQLite databases
       - .:/workspace      # Mount workspace
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - lynkr-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lynkr.version=1.0.1"
+      - "com.lynkr.description=Claude Code proxy with multi-provider support"
+    # Uncomment to set resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
 
   # Ollama service
   ollama:
@@ -108,6 +139,15 @@ services:
     restart: unless-stopped
     networks:
       - lynkr-network
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.lynkr.service=ollama"
+      - "com.lynkr.description=Local LLM runtime"
     # Uncomment for NVIDIA GPU support
     # deploy:
     #   resources:
@@ -128,10 +168,16 @@ services:
   #   volumes:
   #     - ollama-webui-data:/app/backend/data
   #   depends_on:
-  #     - ollama
+  #     ollama:
+  #       condition: service_healthy
   #   restart: unless-stopped
   #   networks:
   #     - lynkr-network
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
 volumes:
   ollama-data:

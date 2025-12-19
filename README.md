@@ -44,7 +44,8 @@
 10. [Troubleshooting](#troubleshooting)
 11. [Roadmap & Known Gaps](#roadmap--known-gaps)
 12. [FAQ](#faq)
-13. [License](#license)
+13. [References](#references)
+14. [License](#license)
 
 ---
 
@@ -1345,6 +1346,7 @@ Replace `<workspace>` and `<endpoint-name>` with your Databricks workspace host 
 - **503 Service Unavailable errors during normal load** – Check load shedding thresholds (`LOAD_SHEDDING_*`). Lower values may trigger too aggressively. Check `/metrics/observability` for memory usage patterns.
 - **Circuit breaker stuck in OPEN state** – Check `/metrics/circuit-breakers` to see failure counts. Verify backend service (Databricks/Azure) is accessible. Circuit will automatically attempt recovery after `CIRCUIT_BREAKER_TIMEOUT` (default: 60s).
 - **"Circuit breaker is OPEN" errors** – The circuit breaker detected too many failures and is protecting against cascading failures. Wait for timeout or fix the underlying issue. Check logs for root cause of failures.
+  - **Azure OpenAI specific**: If using Azure OpenAI and seeing circuit breaker errors, verify your `AZURE_OPENAI_ENDPOINT` includes the full path (including `/openai/deployments/YOUR-DEPLOYMENT/chat/completions`). Missing endpoint variable or undefined returns can trigger circuit breaker protection.
 - **High latency after adding production features** – This is unexpected; middleware adds only ~7μs overhead. Check `/metrics/prometheus` for actual latency distribution. Verify network latency to backend services.
 - **Health check endpoint returns 503 but service seems healthy** – Check individual health check components in the response JSON. Database connectivity or memory issues may trigger this. Review logs for specific health check failures.
 - **Metrics endpoint shows incorrect data** – Metrics are in-memory and reset on restart. For persistent metrics, configure Prometheus scraping. Check that `METRICS_ENABLED=true`.
@@ -1535,6 +1537,16 @@ A: Use the included Kubernetes configurations and Docker support. Key steps:
 4. Set up Grafana dashboards for visualization
 
 The graceful shutdown and health check endpoints ensure zero-downtime deployments.
+
+---
+
+## References
+
+Lynkr's design also includes ACE Framework informed by research in agentic AI systems and context engineering:
+
+- **Zhang et al. (2024)**. *Agentic Context Engineering*. arXiv:2510.04618. [arXiv](https://arxiv.org/abs/2510.04618)
+
+For BibTeX citations, see [CITATIONS.bib](CITATIONS.bib).
 
 ---
 

@@ -1,6 +1,14 @@
 # Use a small Node.js base image
 FROM node:20-alpine
 
+# Add OCI labels for better container management
+LABEL org.opencontainers.image.title="Lynkr" \
+      org.opencontainers.image.description="Self-hosted Claude Code proxy with multi-provider support and production hardening" \
+      org.opencontainers.image.version="1.0.1" \
+      org.opencontainers.image.vendor="Vishal Veera Reddy" \
+      org.opencontainers.image.source="https://github.com/vishalveerareddy123/Lynkr" \
+      org.opencontainers.image.licenses="MIT"
+
 # Create app directory
 WORKDIR /app
 
@@ -24,9 +32,18 @@ COPY docker/start.sh ./start.sh
 RUN chmod +x ./start.sh
 VOLUME ["/app/data"]
 
+# Create non-root user for better security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
 # Expose the proxy port and searxng port
 EXPOSE 8080
 EXPOSE 8888
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1
 
 # Provide helpful defaults for required environment variables (override at runtime)
 # Core Configuration
@@ -49,17 +66,19 @@ ENV PREFER_OLLAMA="false" \
     OLLAMA_MAX_TOOLS_FOR_ROUTING="3"
 
 # OpenRouter Configuration (optional)
+# Access 100+ models through a single API
 ENV OPENROUTER_API_KEY="" \
     OPENROUTER_MODEL="amazon/nova-2-lite-v1:free" \
     OPENROUTER_ENDPOINT="https://openrouter.ai/api/v1/chat/completions" \
     OPENROUTER_MAX_TOOLS_FOR_ROUTING="15"
 
 # Azure OpenAI Configuration (optional)
+# IMPORTANT: Set full endpoint URL including deployment path
+# Example: https://your-resource.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT/chat/completions?api-version=2025-01-01-preview
 # Deployment options: gpt-4o, gpt-4o-mini, gpt-5-chat, o1-preview, o3-mini
 ENV AZURE_OPENAI_ENDPOINT="" \
     AZURE_OPENAI_API_KEY="" \
-    AZURE_OPENAI_DEPLOYMENT="gpt-4o" \
-    AZURE_OPENAI_API_VERSION="2024-08-01-preview"
+    AZURE_OPENAI_DEPLOYMENT="gpt-4o"
 
 # Hybrid Routing & Fallback Configuration
 ENV FALLBACK_ENABLED="true" \
@@ -68,6 +87,16 @@ ENV FALLBACK_ENABLED="true" \
 # Azure Anthropic Configuration (optional)
 ENV AZURE_ANTHROPIC_ENDPOINT="" \
     AZURE_ANTHROPIC_API_KEY=""
+
+# Production Hardening Defaults
+ENV CIRCUIT_BREAKER_FAILURE_THRESHOLD="5" \
+    CIRCUIT_BREAKER_SUCCESS_THRESHOLD="2" \
+    CIRCUIT_BREAKER_TIMEOUT="60000" \
+    LOAD_SHEDDING_MEMORY_THRESHOLD="0.85" \
+    LOAD_SHEDDING_HEAP_THRESHOLD="0.90"
+
+# Switch to non-root user
+USER nodejs
 
 # Run the proxy
 CMD ["./start.sh"]

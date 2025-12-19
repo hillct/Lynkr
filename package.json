@@ -1,7 +1,7 @@
 {
   "name": "lynkr",
-  "version": "1.0.1",
-  "description": "Self-hosted Claude Code proxy with Databricks and Azure Anthropic adapters, workspace tooling, and MCP integration.",
+  "version": "2.0.0",
+  "description": "Self-hosted Claude Code proxy with Databricks,Azure  adapters, workspace tooling, and MCP integration.",
   "main": "index.js",
   "bin": {
     "lynkr": "./bin/cli.js",
@@ -41,6 +41,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@azure/openai": "^2.0.0",
     "better-sqlite3": "^9.4.0",
     "compression": "^1.7.4",
     "diff": "^5.2.0",
@@ -49,6 +50,7 @@
     "express-rate-limit": "^8.2.1",
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.1",
+    "openai": "^6.14.0",
     "pino": "^8.17.2",
     "pino-http": "^8.6.0",
     "tree-sitter": "^0.20.1",

@@ -699,10 +699,10 @@ function toAnthropicResponse(openai, requestedModel, wantsThinking) {
       choice?.finish_reason === "stop"
         ? "end_turn"
         : choice?.finish_reason === "length"
-        ? "max_tokens"
-        : choice?.finish_reason === "tool_calls"
-        ? "tool_use"
-        : choice?.finish_reason ?? "end_turn",
+          ? "max_tokens"
+          : choice?.finish_reason === "tool_calls"
+            ? "tool_use"
+            : choice?.finish_reason ?? "end_turn",
     stop_sequence: null,
     usage: {
       input_tokens: usage.prompt_tokens ?? 0,
@@ -874,9 +874,9 @@ function sanitizePayload(payload) {
       tools && tools.length > 0
         ? tools
         : DEFAULT_AZURE_TOOLS.map((tool) => ({
-            name: tool.name,
-            input_schema: JSON.parse(JSON.stringify(tool.input_schema)),
-          }));
+          name: tool.name,
+          input_schema: JSON.parse(JSON.stringify(tool.input_schema)),
+        }));
     delete clean.tool_choice;
   } else if (providerType === "ollama") {
     // Check if model supports tools
@@ -1122,7 +1122,7 @@ async function runAgentLoop({
         "Azure Anthropic request payload structure",
       );
     }
-    
+
     const databricksResponse = await invokeModel(cleanPayload);
 
     // Handle streaming responses (pass through without buffering)
@@ -1195,7 +1195,7 @@ async function runAgentLoop({
     // Extract message and tool calls based on provider response format
     let message = {};
     let toolCalls = [];
-    
+
     if (providerType === "azure-anthropic") {
       // Anthropic format: { content: [{ type: "tool_use", ... }], stop_reason: "tool_use" }
       message = {
@@ -1203,8 +1203,8 @@ async function runAgentLoop({
         stop_reason: databricksResponse.json?.stop_reason,
       };
       // Extract tool_use blocks from content array
-      const contentArray = Array.isArray(databricksResponse.json?.content) 
-        ? databricksResponse.json.content 
+      const contentArray = Array.isArray(databricksResponse.json?.content)
+        ? databricksResponse.json.content
         : [];
       toolCalls = contentArray
         .filter(block => block?.type === "tool_use")
@@ -1217,7 +1217,7 @@ async function runAgentLoop({
           // Keep original block for reference
           _anthropic_block: block,
         }));
-      
+
       logger.debug(
         {
           sessionId: session?.id ?? null,
@@ -1332,40 +1332,42 @@ async function runAgentLoop({
       // Check if tool execution should happen on client side
       const executionMode = config.toolExecutionMode || "server";
 
-      // IMPORTANT: Task tools (subagents) ALWAYS execute server-side, regardless of execution mode
-      // Separate Task calls from other tool calls
-      const taskToolCalls = [];
-      const nonTaskToolCalls = [];
+      // IMPORTANT: Task tools (subagents) and Web Search tools ALWAYS execute server-side, regardless of execution mode to ensure reliability
+      // Separate Server-side tools from Client-side tools
+      const serverSideToolCalls = [];
+      const clientSideToolCalls = [];
+
+      const SERVER_SIDE_TOOLS = new Set(["task", "web_search", "web_fetch", "websearch", "webfetch"]);
 
       for (const call of toolCalls) {
         const toolName = (call.function?.name ?? call.name ?? "").toLowerCase();
-        if (toolName === "task") {
-          taskToolCalls.push(call);
+        if (SERVER_SIDE_TOOLS.has(toolName)) {
+          serverSideToolCalls.push(call);
         } else {
-          nonTaskToolCalls.push(call);
+          clientSideToolCalls.push(call);
         }
       }
 
-      // If in passthrough/client mode and there are non-Task tools, return them to client
-      // Task tools will be executed server-side below
-      if ((executionMode === "passthrough" || executionMode === "client") && nonTaskToolCalls.length > 0) {
+      // If in passthrough/client mode and there are client-side tools, return them to client
+      // Server-side tools (Task, Web) will be executed below
+      if ((executionMode === "passthrough" || executionMode === "client") && clientSideToolCalls.length > 0) {
         logger.info(
           {
             sessionId: session?.id ?? null,
             totalToolCount: toolCalls.length,
-            taskToolCount: taskToolCalls.length,
-            nonTaskToolCount: nonTaskToolCalls.length,
+            serverToolCount: serverSideToolCalls.length,
+            clientToolCount: clientSideToolCalls.length,
             executionMode,
-            nonTaskTools: nonTaskToolCalls.map((c) => c.function?.name ?? c.name),
+            clientTools: clientSideToolCalls.map((c) => c.function?.name ?? c.name),
           },
           "Hybrid mode: returning non-Task tools to client, executing Task tools on server"
         );
 
-        // Filter sessionContent to only include non-Task tool_use blocks
+        // Filter sessionContent to only include client-side tool_use blocks
         const clientContent = sessionContent.filter(block => {
           if (block.type !== "tool_use") return true; // Keep text blocks
           const toolName = (block.name ?? "").toLowerCase();
-          return toolName !== "task"; // Keep non-Task tool_use blocks
+          return !SERVER_SIDE_TOOLS.has(toolName); // Keep client-side tool_use blocks
         });
 
         // Convert OpenRouter response to Anthropic format for CLI
@@ -1388,13 +1390,13 @@ async function runAgentLoop({
             clientContentLength: clientContent.length,
             clientContentTypes: clientContent.map(b => b.type),
           },
-          "Passthrough: returning non-Task tools to client"
+          "Passthrough: returning client-side tools to client"
         );
 
-        // If there are Task tools, we need to execute them server-side first
-        // then continue the conversation loop. For now, let's fall through to execute Task tools.
-        if (taskToolCalls.length === 0) {
-          // No Task tools - pure passthrough
+        // If there are server-side tools, we need to execute them server-side first
+        // then continue the conversation loop. For now, let's fall through to execute server-side tools.
+        if (serverSideToolCalls.length === 0) {
+          // No server-side tools - pure passthrough
           return {
             response: {
               status: 200,
@@ -1407,25 +1409,25 @@ async function runAgentLoop({
           };
         }
 
-        // Has Task tools - we need to execute them and continue
-        // Override toolCalls to only include Task tools for server execution
-        toolCalls = taskToolCalls;
+        // Has Server-side tools - we need to execute them and continue
+        // Override toolCalls to only include Server-side tools for server execution
+        toolCalls = serverSideToolCalls;
 
         logger.info(
           {
             sessionId: session?.id ?? null,
-            taskToolCount: taskToolCalls.length,
+            serverToolCount: serverSideToolCalls.length,
           },
-          "Executing Task tools server-side in hybrid mode"
+          "Executing server-side tools in hybrid mode"
         );
       } else if (executionMode === "passthrough" || executionMode === "client") {
-        // Only Task tools, no non-Task tools - execute all server-side
+        // Only Server-side tools, no Client-side tools - execute all server-side
         logger.info(
           {
             sessionId: session?.id ?? null,
-            taskToolCount: taskToolCalls.length,
+            serverToolCount: serverSideToolCalls.length,
           },
-          "All tools are Task tools - executing server-side"
+          "All tools are server-side tools - executing server-side"
         );
       }
 

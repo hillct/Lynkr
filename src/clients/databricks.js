@@ -8,9 +8,14 @@ const logger = require("../logger");
 const { STANDARD_TOOLS } = require("./standard-tools");
 const { convertAnthropicToolsToOpenRouter } = require("./openrouter-utils");
 
+
+
+
 if (typeof fetch !== "function") {
   throw new Error("Node 18+ is required for the built-in fetch API.");
 }
+
+
 
 // HTTP connection pooling for better performance
 const httpAgent = new http.Agent({
@@ -318,6 +323,14 @@ async function invokeOpenRouter(body) {
   return performJsonRequest(endpoint, { headers, body: openRouterBody }, "OpenRouter");
 }
 
+function detectAzureFormat(url) {
+  if (url.includes("/openai/responses")) return "responses";
+  if (url.includes("/models/")) return "models";
+  if (url.includes("/openai/deployments")) return "deployments";
+  throw new Error("Unknown Azure OpenAI endpoint");
+}
+
+
 async function invokeAzureOpenAI(body) {
   if (!config.azureOpenAI?.endpoint || !config.azureOpenAI?.apiKey) {
     throw new Error("Azure OpenAI endpoint or API key is not configured.");
@@ -328,12 +341,13 @@ async function invokeAzureOpenAI(body) {
     convertAnthropicMessagesToOpenRouter
   } = require("./openrouter-utils");
 
-  // Azure OpenAI URL format: {endpoint}/openai/deployments/{deployment}/chat/completions
-  const endpoint = `${config.azureOpenAI.endpoint}/openai/deployments/${config.azureOpenAI.deployment}/chat/completions?api-version=${config.azureOpenAI.apiVersion}`;
+  // Azure OpenAI URL format
+  const endpoint = config.azureOpenAI.endpoint;
+  const format = detectAzureFormat(endpoint);
 
   const headers = {
     "api-key": config.azureOpenAI.apiKey,  // Azure uses "api-key" not "Authorization"
-    "Content-Type": "application/json",
+    "Content-Type": "application/json"
   };
 
   // Convert messages and handle system message
@@ -352,7 +366,8 @@ async function invokeAzureOpenAI(body) {
     temperature: body.temperature ?? 0.3,  // Lower temperature for more deterministic, action-oriented behavior
     max_tokens: Math.min(body.max_tokens ?? 4096, 16384),  // Cap at Azure OpenAI's limit
     top_p: body.top_p ?? 1.0,
-    stream: body.stream ?? false
+    stream: body.stream ?? false,
+    model: config.azureOpenAI.deployment
   };
 
   // Add tools - inject standard tools if client didn't send any (passthrough mode)
@@ -394,7 +409,19 @@ async function invokeAzureOpenAI(body) {
     tool_choice: azureBody.tool_choice
   }, "=== AZURE OPENAI REQUEST ===");
 
-  return performJsonRequest(endpoint, { headers, body: azureBody }, "Azure OpenAI");
+  if (format === "deployments" || format === "models") {
+    return performJsonRequest(endpoint, { headers, body: azureBody }, "Azure OpenAI");
+  }
+  else if (format === "responses") {
+    azureBody.max_completion_tokens = azureBody.max_tokens;
+    delete azureBody.max_tokens;
+    delete azureBody.temperature;
+    delete azureBody.top_p;
+    return performJsonRequest(endpoint, { headers, body: azureBody }, "Azure OpenAI");
+  }
+  else {
+    throw new Error(`Unsupported Azure OpenAI endpoint format: ${format}`);
+  }
 }
 
 async function invokeModel(body, options = {}) {
@@ -571,8 +598,8 @@ function categorizeFailure(error) {
     return "timeout";
   }
   if (error.message?.includes("not configured") ||
-      error.message?.includes("not available") ||
-      error.code === "ECONNREFUSED") {
+    error.message?.includes("not available") ||
+    error.code === "ECONNREFUSED") {
     return "service_unavailable";
   }
   if (error.message?.includes("tool") || error.message?.includes("function")) {

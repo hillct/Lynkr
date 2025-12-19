@@ -88,7 +88,7 @@ const openRouterEndpoint = process.env.OPENROUTER_ENDPOINT ?? "https://openroute
 const azureOpenAIEndpoint = process.env.AZURE_OPENAI_ENDPOINT ?? null;
 const azureOpenAIApiKey = process.env.AZURE_OPENAI_API_KEY ?? null;
 const azureOpenAIDeployment = process.env.AZURE_OPENAI_DEPLOYMENT ?? "gpt-4o";
-const azureOpenAIApiVersion = process.env.AZURE_OPENAI_API_VERSION ?? "2024-08-01-preview";
+
 
 // Hybrid routing configuration
 const preferOllama = process.env.PREFER_OLLAMA === "true";
@@ -349,8 +349,7 @@ const config = {
   azureOpenAI: {
     endpoint: azureOpenAIEndpoint,
     apiKey: azureOpenAIApiKey,
-    deployment: azureOpenAIDeployment,
-    apiVersion: azureOpenAIApiVersion,
+    deployment: azureOpenAIDeployment
   },
   modelProvider: {
     type: modelProvider,

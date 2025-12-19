@@ -3,6 +3,8 @@ const { executeToolCall, listTools } = require("../tools");
 const { invokeModel } = require("../clients/databricks");
 const { STANDARD_TOOLS } = require("../clients/standard-tools");
 const ContextManager = require("./context-manager");
+const Skillbook = require("./skillbook");
+const Reflector = require("./reflector");
 
 const contextManager = new ContextManager();
 
@@ -38,6 +40,14 @@ class SubagentExecutor {
 
       contextManager.completeExecution(context, finalResult);
 
+      // Learn from successful execution (async, non-blocking)
+      this._learnFromExecution(context, true).catch(err => {
+        logger.warn({
+          agentType: agentDef.name,
+          error: err.message
+        }, "Failed to learn from execution");
+      });
+
       return {
         success: true,
         result: finalResult,
@@ -52,6 +62,14 @@ class SubagentExecutor {
 
     } catch (error) {
       contextManager.failExecution(context, error);
+
+      // Learn from failed execution (async, non-blocking)
+      this._learnFromExecution(context, false).catch(err => {
+        logger.debug({
+          agentType: agentDef.name,
+          error: err.message
+        }, "Failed to learn from failed execution");
+      });
 
       return {
         success: false,
@@ -348,6 +366,47 @@ class SubagentExecutor {
 
     return modelMap[modelName] || modelName;
   }
+
+  /**
+   * Learn from execution (async, non-blocking)
+   * Uses Reflector to extract patterns and updates skillbook
+   */
+  async _learnFromExecution(context, successful) {
+    try {
+      // Use Reflector to extract sophisticated patterns
+      const patterns = Reflector.reflect(context, successful);
+
+      if (patterns.length === 0) {
+        return; // Nothing to learn
+      }
+
+      // Load skillbook for this agent type
+      const skillbook = await Skillbook.load(context.agentName);
+
+      // Add each learned pattern
+      for (const pattern of patterns) {
+        skillbook.addSkill(pattern);
+      }
+
+      // Save skillbook (persists learning)
+      await skillbook.save();
+
+      logger.info({
+        agentType: context.agentName,
+        patternsLearned: patterns.length,
+        totalSkills: skillbook.skills.size,
+        successful
+      }, "Agent learned from execution");
+
+    } catch (error) {
+      // Don't throw - learning failures shouldn't break execution
+      logger.warn({
+        agentType: context.agentName,
+        error: error.message
+      }, "Learning failed");
+    }
+  }
+
 }
 
 module.exports = SubagentExecutor;

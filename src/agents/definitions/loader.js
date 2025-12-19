@@ -2,18 +2,97 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 const logger = require("../../logger");
+const Skillbook = require("../skillbook");
 
 class AgentDefinitionLoader {
   constructor() {
     this.agents = new Map();
-    this.loadBuiltInAgents();
+    this.skillbooks = new Map(); // agentType → Skillbook
+    this.initialized = false;
+
+    // Initialize synchronously for compatibility
+    this.loadBuiltInAgentsSync();
     this.loadFilesystemAgents();
+
+    // Load skillbooks asynchronously (non-blocking)
+    this._loadSkillbooksAsync();
+  }
+
+  /**
+   * Async initialization of skillbooks (doesn't block constructor)
+   */
+  async _loadSkillbooksAsync() {
+    try {
+      // Load skillbooks for all built-in agents
+      const agentTypes = Array.from(this.agents.keys());
+
+      await Promise.all(
+        agentTypes.map(async (agentType) => {
+          const skillbook = await Skillbook.load(agentType);
+          this.skillbooks.set(agentType, skillbook);
+
+          // Update agent system prompt with learned skills
+          this._injectSkillsIntoPrompt(agentType);
+        })
+      );
+
+      this.initialized = true;
+
+      logger.info({
+        agentCount: this.agents.size,
+        skillbooksLoaded: this.skillbooks.size,
+        totalSkills: Array.from(this.skillbooks.values())
+          .reduce((sum, sb) => sum + sb.skills.size, 0)
+      }, "Skillbooks loaded and injected into agents");
+
+    } catch (error) {
+      logger.error({
+        error: error.message
+      }, "Failed to load skillbooks");
+    }
+  }
+
+  /**
+   * Inject learned skills into agent system prompt
+   */
+  _injectSkillsIntoPrompt(agentType) {
+    const agent = this.agents.get(agentType);
+    const skillbook = this.skillbooks.get(agentType);
+
+    if (!agent || !skillbook) return;
+
+    // Store original prompt if not already stored
+    if (!agent.originalSystemPrompt) {
+      agent.originalSystemPrompt = agent.systemPrompt;
+    }
+
+    // Get learned skills
+    const skillsSection = skillbook.formatForPrompt();
+
+    // Inject skills into prompt (prepend to agent prompt)
+    if (skillsSection) {
+      agent.systemPrompt = agent.originalSystemPrompt + "\n" + skillsSection;
+    }
+  }
+
+  /**
+   * Get skillbook for agent type
+   */
+  getSkillbook(agentType) {
+    return this.skillbooks.get(agentType);
+  }
+
+  /**
+   * Reload skillbooks and update prompts (call after learning)
+   */
+  async reloadSkillbooks() {
+    await this._loadSkillbooksAsync();
   }
 
   /**
    * Load built-in agents (Explore, Plan, General)
    */
-  loadBuiltInAgents() {
+  loadBuiltInAgentsSync() {
     // Explore Agent
     this.agents.set("Explore", {
       name: "Explore",

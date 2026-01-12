@@ -78,10 +78,13 @@ const azureAnthropicVersion = process.env.AZURE_ANTHROPIC_VERSION ?? "2023-06-01
 const ollamaEndpoint = process.env.OLLAMA_ENDPOINT ?? "http://localhost:11434";
 const ollamaModel = process.env.OLLAMA_MODEL ?? "qwen2.5-coder:7b";
 const ollamaTimeout = Number.parseInt(process.env.OLLAMA_TIMEOUT_MS ?? "120000", 10);
+const ollamaEmbeddingsEndpoint = process.env.OLLAMA_EMBEDDINGS_ENDPOINT ?? `${ollamaEndpoint}/api/embeddings`;
+const ollamaEmbeddingsModel = process.env.OLLAMA_EMBEDDINGS_MODEL ?? "nomic-embed-text";
 
 // OpenRouter configuration
 const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? null;
 const openRouterModel = process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini";
+const openRouterEmbeddingsModel = process.env.OPENROUTER_EMBEDDINGS_MODEL ?? "openai/text-embedding-ada-002";
 const openRouterEndpoint = process.env.OPENROUTER_ENDPOINT ?? "https://openrouter.ai/api/v1/chat/completions";
 
 // Azure OpenAI configuration
@@ -101,6 +104,7 @@ const llamacppEndpoint = process.env.LLAMACPP_ENDPOINT?.trim() || "http://localh
 const llamacppModel = process.env.LLAMACPP_MODEL?.trim() || "default";
 const llamacppTimeout = Number.parseInt(process.env.LLAMACPP_TIMEOUT_MS ?? "120000", 10);
 const llamacppApiKey = process.env.LLAMACPP_API_KEY?.trim() || null;
+const llamacppEmbeddingsEndpoint = process.env.LLAMACPP_EMBEDDINGS_ENDPOINT?.trim() || `${llamacppEndpoint}/embeddings`;
 
 // LM Studio configuration
 const lmstudioEndpoint = process.env.LMSTUDIO_ENDPOINT?.trim() || "http://localhost:1234";
@@ -433,10 +437,13 @@ const config = {
     endpoint: ollamaEndpoint,
     model: ollamaModel,
     timeout: Number.isNaN(ollamaTimeout) ? 120000 : ollamaTimeout,
+    embeddingsEndpoint: ollamaEmbeddingsEndpoint,
+    embeddingsModel: ollamaEmbeddingsModel,
   },
   openrouter: {
     apiKey: openRouterApiKey,
     model: openRouterModel,
+    embeddingsModel: openRouterEmbeddingsModel,
     endpoint: openRouterEndpoint,
   },
   azureOpenAI: {
@@ -456,6 +463,7 @@ const config = {
     model: llamacppModel,
     timeout: Number.isNaN(llamacppTimeout) ? 120000 : llamacppTimeout,
     apiKey: llamacppApiKey,
+    embeddingsEndpoint: llamacppEmbeddingsEndpoint,
   },
   lmstudio: {
     endpoint: lmstudioEndpoint,

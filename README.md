@@ -1812,6 +1812,649 @@ If performance is degraded:
 
 ---
 
+## Cursor IDE Integration (OpenAI API Compatibility)
+
+Lynkr provides **full Cursor IDE support** through OpenAI-compatible API endpoints, enabling you to use Cursor with any provider (Databricks, Bedrock, OpenRouter, Ollama, etc.) while maintaining all Cursor features.
+
+### Why Use Lynkr with Cursor?
+
+- 💰 **60-80% cost savings** vs Cursor's default GPT-4 pricing
+- 🔓 **Provider choice** - Use Claude, local models, or any supported provider
+- 🏠 **Self-hosted** - Full control over your AI infrastructure
+- ✅ **Full compatibility** - All Cursor features work (chat, autocomplete, @Codebase search)
+
+### Quick Setup (5 Minutes)
+
+#### Step 1: Start Lynkr Server
+
+```bash
+# Navigate to Lynkr directory
+cd /path/to/claude-code
+
+# Start with any provider (Databricks, Bedrock, OpenRouter, Ollama, etc.)
+npm start
+
+# Wait for: "Server listening at http://0.0.0.0:8081" (or your configured PORT)
+```
+
+**Note**: Lynkr runs on port **8081** by default (configured in `.env` as `PORT=8081`)
+
+#### Step 2: Configure Cursor (Detailed Steps)
+
+1. **Open Cursor Settings**
+   - Mac: Click **Cursor** menu → **Settings** (or press `Cmd+,`)
+   - Windows/Linux: Click **File** → **Settings** (or press `Ctrl+,`)
+
+2. **Navigate to Models Section**
+   - In the Settings sidebar, find **Features** section
+   - Click on **Models**
+
+3. **Configure OpenAI API Settings**
+
+   Fill in these three fields:
+
+   **API Key:**
+   ```
+   sk-lynkr
+   ```
+   *(Cursor requires a non-empty value, but Lynkr ignores it. You can use any text like "dummy" or "lynkr")*
+
+   **Base URL:**
+   ```
+   http://localhost:8081/v1
+   ```
+   ⚠️ **Critical:**
+   - Use port **8081** (or your configured PORT in .env)
+   - Must end with `/v1`
+   - Include `http://` prefix
+
+   **Model:**
+
+   Choose based on your `MODEL_PROVIDER` in `.env`:
+   - **Bedrock**: `claude-3.5-sonnet` or `claude-sonnet-4.5`
+   - **Databricks**: `claude-sonnet-4.5`
+   - **OpenRouter**: `anthropic/claude-3.5-sonnet`
+   - **Ollama**: `qwen2.5-coder:latest` (or your OLLAMA_MODEL)
+   - **Azure OpenAI**: `gpt-4o` or your deployment name
+
+4. **Save Settings** (auto-saves in Cursor)
+
+#### Step 3: Test the Integration
+
+**Test 1: Basic Chat** (`Cmd+L` / `Ctrl+L`)
+```
+You: "Hello, can you see this?"
+Expected: Response from Claude via Lynkr ✅
+```
+
+**Test 2: Inline Edits** (`Cmd+K` / `Ctrl+K`)
+```
+1. Select some code
+2. Press Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+3. Type: "add a comment explaining this code"
+Expected: Code suggestions appear inline ✅
+```
+
+**Test 3: @Codebase Search** (requires embeddings)
+```
+You: "@Codebase where is the config file?"
+Expected:
+  ✅ If embeddings configured: Semantic search finds relevant files
+  ❌ If no embeddings: Error or "not available" message
+```
+
+#### Step 4: Verify Lynkr Logs
+
+Check your terminal where Lynkr is running. You should see:
+```
+[INFO] POST /v1/chat/completions
+[INFO] Routing to bedrock (or your provider)
+[INFO] Response sent: 200
+```
+
+### Feature Compatibility Matrix
+
+| Feature | Without Embeddings | With Embeddings |
+|---------|-------------------|-----------------|
+| **Chat in current file** | ✅ Works | ✅ Works |
+| **Inline autocomplete** | ✅ Works | ✅ Works |
+| **Cmd+K edits** | ✅ Works | ✅ Works |
+| **Manual @file references** | ✅ Works | ✅ Works |
+| **Terminal commands** | ✅ Works | ✅ Works |
+| **@Codebase semantic search** | ❌ Requires embeddings | ✅ Works |
+| **Automatic context** | ❌ Requires embeddings | ✅ Works |
+| **Find similar code** | ❌ Requires embeddings | ✅ Works |
+
+### Enabling @Codebase Semantic Search (Optional)
+
+For Cursor's @Codebase semantic search, you need embeddings support.
+
+**⚡ Already using OpenRouter? You're all set!**
+
+If you configured `MODEL_PROVIDER=openrouter`, embeddings **work automatically** with the same `OPENROUTER_API_KEY` - no additional setup needed. OpenRouter handles both chat completions AND embeddings with one key.
+
+**🔧 Using a different provider? Add embeddings:**
+
+If you're using Databricks, Bedrock, Ollama, or other providers for chat, add ONE of these for embeddings (ordered by privacy):
+
+**Option A: Ollama (100% Local - Most Private) 🔒**
+```bash
+# Add to .env
+ollama pull nomic-embed-text
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+
+# Cost: FREE, Privacy: 100% local, Quality: Good
+# No cloud APIs, perfect for privacy-sensitive work
+```
+
+**Option B: llama.cpp (100% Local - GGUF Models) 🔒**
+```bash
+# Download model and start server
+./llama-server -m nomic-embed-text-v1.5.Q4_K_M.gguf --port 8080 --embedding
+
+# Add to .env
+LLAMACPP_EMBEDDINGS_ENDPOINT=http://localhost:8080/embeddings
+
+# Cost: FREE, Privacy: 100% local, Quality: Good
+# Uses quantized GGUF models for efficiency
+```
+
+**Option C: OpenRouter (Cloud - Cheapest Cloud Option)**
+```bash
+# Add to .env
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+
+# Get key from: https://openrouter.ai/keys
+# Cost: ~$0.0001 per 1K tokens (~$0.01-0.10/month typical usage)
+# Privacy: Cloud, Quality: Excellent
+
+# Advanced: Use separate models for chat vs embeddings (optional)
+OPENROUTER_MODEL=anthropic/claude-3.5-sonnet           # Chat model
+OPENROUTER_EMBEDDINGS_MODEL=openai/text-embedding-3-small  # Embeddings model
+# (Defaults to text-embedding-ada-002 if not specified)
+```
+
+**Option D: OpenAI Direct (Cloud)**
+```bash
+# Add to .env
+OPENAI_API_KEY=sk-your-key-here
+
+# Get key from: https://platform.openai.com/api-keys
+# Cost: ~$0.0001 per 1K tokens
+# Privacy: Cloud, Quality: Excellent
+```
+
+**🎯 Advanced: Override Embeddings Provider Explicitly (Optional)**
+
+By default, embeddings use the same provider as `MODEL_PROVIDER` (if supported) or automatically select the first available provider. To force a specific provider:
+
+```bash
+# Add to .env to explicitly choose embeddings provider
+EMBEDDINGS_PROVIDER=ollama        # Use Ollama embeddings
+# OR
+EMBEDDINGS_PROVIDER=llamacpp      # Use llama.cpp embeddings
+# OR
+EMBEDDINGS_PROVIDER=openrouter    # Use OpenRouter embeddings
+# OR
+EMBEDDINGS_PROVIDER=openai        # Use OpenAI embeddings
+```
+
+**Example use case**: Use Databricks for chat but force Ollama for embeddings (privacy)
+```bash
+MODEL_PROVIDER=databricks
+DATABRICKS_API_KEY=your-key
+EMBEDDINGS_PROVIDER=ollama        # Force local embeddings
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+```
+
+#### Embedding Models Comparison
+
+| Option | Privacy | Cost/Month | Setup Complexity | Quality | Speed |
+|--------|---------|------------|------------------|---------|-------|
+| **Ollama** | 🔒 100% Local | FREE | Easy (1 command) | Good | Fast |
+| **llama.cpp** | 🔒 100% Local | FREE | Medium (download GGUF) | Good | Fast |
+| **OpenRouter** | ☁️ Cloud | $0.01-0.10 | Easy (get API key) | Excellent | Very Fast |
+| **OpenAI** | ☁️ Cloud | $0.01-0.10 | Easy (get API key) | Excellent | Very Fast |
+
+**Recommended setups:**
+- **100% Local/Private**: Ollama chat + Ollama embeddings (zero cloud dependencies)
+- **Hybrid**: Databricks/Bedrock chat + Ollama embeddings (private search, cloud chat)
+- **Simple Cloud**: OpenRouter chat + OpenRouter embeddings (one key for both)
+
+**Restart Lynkr**, and @Codebase will work!
+
+### Available Endpoints
+
+Lynkr implements all 4 OpenAI API endpoints for full Cursor compatibility:
+
+1. **POST /v1/chat/completions** - Chat with streaming support
+   - Handles all chat/completion requests
+   - Converts OpenAI format ↔ Anthropic format automatically
+   - Full tool calling support
+
+2. **GET /v1/models** - List available models
+   - Returns models based on configured provider
+   - Updates dynamically when you change providers
+
+3. **POST /v1/embeddings** - Generate embeddings
+   - Required for @Codebase semantic search
+   - Supports: Ollama (local), llama.cpp (local), OpenRouter (cloud), OpenAI (cloud)
+   - Smart provider detection: explicit → same as chat → first available
+   - Falls back gracefully if not configured (returns 501)
+
+4. **GET /v1/health** - Health check
+   - Verify Lynkr is running
+   - Check provider status
+
+### Cost Comparison (100K requests/month)
+
+| Setup | Monthly Cost | Embeddings Setup | Features | Privacy |
+|-------|--------------|------------------|----------|---------|
+| **Cursor native (GPT-4)** | $20-50 | Built-in | All features | Cloud |
+| **Lynkr + OpenRouter** | $5-10 | ⚡ **Same key for both** | All features, simplest setup | Cloud |
+| **Lynkr + Databricks** | $15-30 | +Ollama/OpenRouter | All features | Cloud chat, local/cloud search |
+| **Lynkr + Ollama + Ollama embeddings** | **100% FREE** 🔒 | Ollama (local) | All features, 100% local | 100% Local |
+| **Lynkr + Ollama + llama.cpp embeddings** | **100% FREE** 🔒 | llama.cpp (local) | All features, 100% local | 100% Local |
+| **Lynkr + Ollama + OpenRouter embeddings** | $0.01-0.10 | OpenRouter (cloud) | All features, hybrid | Local chat, cloud search |
+| **Lynkr + Ollama (no embeddings)** | **FREE** | None | Chat/Cmd+K only, no @Codebase | 100% Local |
+
+### Provider Recommendations for Cursor
+
+**Best for Privacy (100% Local) 🔒:**
+- **Ollama + Ollama embeddings** - Zero cloud dependencies, completely private
+  - Cost: **100% FREE**
+  - Privacy: All data stays on your machine
+  - Full @Codebase support with local embeddings
+  - Perfect for: Sensitive codebases, offline work, privacy requirements
+
+**Best for Simplicity (Recommended for most users):**
+- **OpenRouter** - ONE key for chat + embeddings, no extra setup
+  - Cost: ~$5-10/month (100K requests)
+  - Full @Codebase support out of the box
+  - Access to 100+ models (Claude, GPT, Llama, etc.)
+
+**Best for Production:**
+- **Databricks** - Claude Sonnet 4.5, enterprise-grade
+- **Bedrock** - AWS infrastructure, 100+ models
+  - Add Ollama embeddings (local) or OpenRouter (cloud) for @Codebase
+
+**Best for Hybrid (Local Chat + Cloud Search):**
+- **Ollama** - FREE (local, offline) + $0.01-0.10/month for cloud embeddings
+  - Privacy: 100% local chat, cloud @Codebase search
+  - Add OpenRouter key only for @Codebase search
+
+**Best for Speed:**
+- **Ollama** - Local inference, 100-500ms latency
+- **llama.cpp** - Optimized GGUF models, 50-300ms latency
+- **OpenRouter** - Fast cloud inference, global CDN
+
+### Troubleshooting
+
+#### Issue: "Connection refused" or "Network error"
+
+**Symptoms:** Cursor shows connection errors, can't reach Lynkr
+
+**Solutions:**
+1. **Verify Lynkr is running:**
+   ```bash
+   # Check if Lynkr process is running on port 8081
+   lsof -i :8081
+   # Should show node process
+   ```
+
+2. **Test health endpoint:**
+   ```bash
+   curl http://localhost:8081/v1/health
+   # Should return: {"status":"ok"}
+   ```
+
+3. **Check port number:**
+   - Verify Cursor Base URL uses correct port: `http://localhost:8081/v1`
+   - Check `.env` file: `PORT=8081`
+   - If you changed PORT, update Cursor settings to match
+
+4. **Verify URL format:**
+   - ✅ Correct: `http://localhost:8081/v1`
+   - ❌ Wrong: `http://localhost:8081` (missing `/v1`)
+   - ❌ Wrong: `localhost:8081/v1` (missing `http://`)
+
+#### Issue: "Invalid API key" or "Unauthorized"
+
+**Symptoms:** Cursor says API key is invalid
+
+**Solutions:**
+- Lynkr doesn't validate API keys from Cursor
+- This error means Cursor isn't reaching Lynkr at all
+- Double-check Base URL in Cursor: `http://localhost:8081/v1`
+- Make sure you included `/v1` at the end
+- Try clearing and re-entering the Base URL
+
+#### Issue: "Model not found" or "Invalid model"
+
+**Symptoms:** Cursor can't find the model you specified
+
+**Solutions:**
+1. **Match model name to your provider:**
+   - **Bedrock**: Use `claude-3.5-sonnet` or `claude-sonnet-4.5`
+   - **Databricks**: Use `claude-sonnet-4.5`
+   - **OpenRouter**: Use `anthropic/claude-3.5-sonnet`
+   - **Ollama**: Use your actual model name like `qwen2.5-coder:latest`
+
+2. **Try generic names:**
+   - Lynkr translates generic names, so try:
+   - `claude-3.5-sonnet`
+   - `gpt-4o`
+   - `claude-sonnet-4.5`
+
+3. **Check provider logs:**
+   - Look at Lynkr terminal for actual error from provider
+   - Provider might not support the model you requested
+
+#### Issue: @Codebase doesn't work
+
+**Symptoms:** @Codebase search shows "not available" or errors
+
+**Solutions:**
+1. **Configure embeddings** (choose ONE):
+
+   **Option A: Ollama (Local, Free)**
+   ```bash
+   # Pull embedding model
+   ollama pull nomic-embed-text
+
+   # Add to .env
+   OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+
+   # Restart Lynkr
+   npm start
+   ```
+
+   **Option B: llama.cpp (Local, Free)**
+   ```bash
+   # Start llama.cpp server with embedding model
+   ./llama-server -m nomic-embed-text-v1.5.Q4_K_M.gguf --port 8080 --embedding
+
+   # Add to .env
+   LLAMACPP_EMBEDDINGS_ENDPOINT=http://localhost:8080/embeddings
+
+   # Restart Lynkr
+   npm start
+   ```
+
+   **Option C: OpenRouter (Cloud, ~$0.01-0.10/month)**
+   ```bash
+   # Add to .env
+   OPENROUTER_API_KEY=sk-or-v1-your-key-here
+
+   # Restart Lynkr
+   npm start
+   ```
+
+2. **Test embeddings endpoint:**
+   ```bash
+   curl http://localhost:8081/v1/embeddings \
+     -H "Content-Type: application/json" \
+     -d '{"input": "test"}'
+
+   # Should return JSON with embeddings array
+   # If 501 error: Embeddings not configured
+   ```
+
+3. **Check Lynkr logs:**
+   - Look for: `Embeddings not configured` warning
+   - Or: `Generating embeddings with ollama/openrouter/etc.`
+
+#### Issue: Chat works but responses are slow
+
+**Symptoms:** Long wait times for responses
+
+**Solutions:**
+1. **Check provider latency:**
+   - **Ollama/llama.cpp**: Local models may be slow on weak hardware
+   - **Cloud providers**: Check your internet connection
+   - **Bedrock/Databricks**: Check region latency
+
+2. **Optimize Ollama:**
+   ```bash
+   # Use smaller/faster models
+   ollama pull qwen2.5-coder:1.5b  # Smaller = faster
+   ```
+
+3. **Check Lynkr logs:**
+   - Look for actual response times
+   - Example: `Response time: 2500ms`
+
+#### Issue: Autocomplete doesn't work with Lynkr
+
+**Symptoms:** Code autocomplete suggestions don't appear
+
+**This is expected behavior:**
+- Cursor's inline autocomplete uses Cursor's built-in models (fast, local)
+- Autocomplete does NOT go through Lynkr
+- Only these features use Lynkr:
+  - ✅ Chat (`Cmd+L` / `Ctrl+L`)
+  - ✅ Cmd+K inline edits
+  - ✅ @Codebase search
+  - ❌ Autocomplete (uses Cursor's models)
+
+#### Issue: Embeddings work but search results are poor
+
+**Symptoms:** @Codebase returns irrelevant files
+
+**Solutions:**
+1. **Try better embedding models:**
+   ```bash
+   # For Ollama - upgrade to larger model
+   ollama pull mxbai-embed-large  # Better quality than nomic-embed-text
+   OLLAMA_EMBEDDINGS_MODEL=mxbai-embed-large
+   ```
+
+2. **Use cloud embeddings for better quality:**
+   ```bash
+   # OpenRouter has excellent embeddings
+   OPENROUTER_API_KEY=sk-or-v1-your-key
+   ```
+
+3. **This is a Cursor indexing issue, not Lynkr:**
+   - Cursor needs to re-index your codebase
+   - Try closing and reopening the workspace
+
+#### Issue: "Too many requests" or rate limiting
+
+**Symptoms:** Provider returns 429 errors
+
+**Solutions:**
+1. **Enable fallback provider:**
+   ```bash
+   # In .env
+   FALLBACK_ENABLED=true
+   FALLBACK_PROVIDER=openrouter  # Or another provider
+   ```
+
+2. **Use different provider:**
+   - Some providers have higher rate limits
+   - OpenRouter aggregates multiple providers
+
+3. **Check provider dashboard:**
+   - Verify you haven't exceeded quota
+   - Some providers have free tier limits
+
+#### Getting More Help
+
+**Check Lynkr logs in terminal:**
+```bash
+# Look for error messages in the terminal where Lynkr is running
+# Logs show:
+#   - Which provider was used
+#   - Request/response details
+#   - Error messages from providers
+```
+
+**Test individual endpoints:**
+```bash
+# Test health
+curl http://localhost:8081/v1/health
+
+# Test chat
+curl http://localhost:8081/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-3.5-sonnet","messages":[{"role":"user","content":"hi"}]}'
+
+# Test embeddings
+curl http://localhost:8081/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{"input":"test"}'
+```
+
+**Enable debug logging:**
+```bash
+# In .env
+LOG_LEVEL=debug
+
+# Restart Lynkr
+npm start
+```
+
+### Architecture
+
+```
+Cursor IDE
+    ↓ OpenAI API format
+Lynkr Proxy
+    ↓ Converts to Anthropic format
+Your Provider (Databricks/Bedrock/OpenRouter/Ollama/etc.)
+    ↓ Returns response
+Lynkr Proxy
+    ↓ Converts back to OpenAI format
+Cursor IDE (displays result)
+```
+
+### Advanced Configuration
+
+#### Setup 1: Simplest (One key for everything - OpenRouter)
+```bash
+# Chat + Embeddings: OpenRouter handles both with ONE key
+MODEL_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+
+# Optional: Use different models for chat vs embeddings
+OPENROUTER_MODEL=anthropic/claude-3.5-sonnet           # Chat
+OPENROUTER_EMBEDDINGS_MODEL=openai/text-embedding-3-small  # Embeddings
+
+# That's it! Both chat and @Codebase search work.
+# Cost: ~$5-10/month for 100K requests
+```
+
+#### Setup 2: Most Private (100% Local - Ollama + Ollama)
+```bash
+# Chat: Ollama local model (FREE)
+MODEL_PROVIDER=ollama
+OLLAMA_MODEL=qwen2.5-coder:latest
+OLLAMA_ENDPOINT=http://localhost:11434
+
+# Embeddings: Ollama local embeddings (FREE)
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+OLLAMA_EMBEDDINGS_ENDPOINT=http://localhost:11434/api/embeddings
+
+# Zero cloud dependencies, 100% private
+# Cost: FREE
+# Privacy: All data stays on your machine
+```
+
+#### Setup 3: Most Private (100% Local - Ollama + llama.cpp)
+```bash
+# Chat: Ollama local model (FREE)
+MODEL_PROVIDER=ollama
+OLLAMA_MODEL=qwen2.5-coder:latest
+
+# Embeddings: llama.cpp with GGUF model (FREE)
+LLAMACPP_EMBEDDINGS_ENDPOINT=http://localhost:8080/embeddings
+
+# Start llama.cpp separately:
+# ./llama-server -m nomic-embed-text-v1.5.Q4_K_M.gguf --port 8080 --embedding
+
+# Cost: FREE
+# Privacy: All data stays on your machine
+```
+
+#### Setup 4: Hybrid (Premium Chat + Local Search)
+```bash
+# Chat: Databricks Claude Sonnet 4.5 (best quality)
+MODEL_PROVIDER=databricks
+DATABRICKS_API_KEY=your-key
+DATABRICKS_API_BASE=https://your-workspace.databricks.com
+
+# Embeddings: Ollama local (private @Codebase search)
+EMBEDDINGS_PROVIDER=ollama  # Force Ollama for embeddings
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+
+# Cost: ~$15-30/month for chat, FREE for embeddings
+# Privacy: Cloud chat, local @Codebase search
+```
+
+#### Setup 5: Hybrid (Premium Chat + Cloud Search)
+```bash
+# Chat: Bedrock with Claude (AWS infrastructure)
+MODEL_PROVIDER=bedrock
+AWS_BEDROCK_API_KEY=your-key
+AWS_BEDROCK_REGION=us-east-2
+AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+
+# Embeddings: OpenRouter (cheaper than Bedrock embeddings)
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+
+# Cost: ~$15-30/month for chat + $0.01-0.10/month for embeddings
+```
+
+#### Setup 6: Cost Optimized (Hybrid Routing)
+```bash
+# Simple queries → Ollama (FREE, local)
+# Complex queries → Databricks (premium, cloud)
+MODEL_PROVIDER=ollama
+PREFER_OLLAMA=true
+FALLBACK_ENABLED=true
+FALLBACK_PROVIDER=databricks
+
+# Embeddings: Local for privacy
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+
+# Cost: Mostly FREE (Ollama handles 70-80% of requests)
+#       Only complex tool-heavy requests go to Databricks
+```
+
+### Visual Setup Summary
+
+```
+┌─────────────────────────────────────────────────────────┐
+│         Cursor Settings → Models → OpenAI API           │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  API Key:     sk-lynkr                                 │
+│               (or any non-empty value)                  │
+│                                                         │
+│  Base URL:    http://localhost:8081/v1                │
+│               ⚠️ Must include /v1                      │
+│                                                         │
+│  Model:       claude-3.5-sonnet                        │
+│               (or your provider's model)                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### What Makes This Different from Cursor Native?
+
+| Aspect | Cursor Native | Lynkr + Cursor |
+|--------|---------------|----------------|
+| **Providers** | OpenAI only | 9+ providers (Bedrock, Databricks, OpenRouter, Ollama, llama.cpp, etc.) |
+| **Costs** | OpenAI pricing | 60-80% cheaper (or 100% FREE with Ollama) |
+| **Privacy** | Cloud-only | Can run 100% locally (Ollama + local embeddings) |
+| **Embeddings** | Built-in (cloud) | 4 options: Ollama (local), llama.cpp (local), OpenRouter (cloud), OpenAI (cloud) |
+| **Control** | Black box | Full observability, logs, metrics |
+| **Features** | All Cursor features | All Cursor features (chat, Cmd+K, @Codebase) |
+| **Flexibility** | Fixed setup | Mix providers (e.g., Bedrock chat + Ollama embeddings) |
+
+---
+
 ## Frequently Asked Questions (FAQ)
 
 <details>
@@ -1820,10 +2463,12 @@ If performance is degraded:
 **A:** Yes! Lynkr is designed as a drop-in replacement for Anthropic's backend. Simply set `ANTHROPIC_BASE_URL` to point to your Lynkr server:
 
 ```bash
-export ANTHROPIC_BASE_URL=http://localhost:8080
+export ANTHROPIC_BASE_URL=http://localhost:8081
 export ANTHROPIC_API_KEY=dummy  # Required by CLI, but ignored by Lynkr
 claude "Your prompt here"
 ```
+
+**Note:** Default port is 8081 (configured in `.env` as `PORT=8081`)
 
 *Related searches: Claude Code proxy setup, Claude Code alternative backend, self-hosted Claude Code*
 </details>
@@ -1844,22 +2489,73 @@ At 100k requests/month, this translates to **$6,400-9,600/month savings** ($77k-
 </details>
 
 <details>
-<summary><strong>Q: Can I use Ollama models with Lynkr?</strong></summary>
+<summary><strong>Q: Can I use Ollama models with Lynkr and Cursor?</strong></summary>
 
-**A:** Yes! Set `MODEL_PROVIDER=ollama` and ensure Ollama is running:
+**A:** Yes! Ollama works for both chat AND embeddings (100% local, FREE):
 
+**Chat setup:**
 ```bash
 export MODEL_PROVIDER=ollama
-export OLLAMA_MODEL=llama3.1:8b  # or qwen2.5-coder, mistral, etc.
+export OLLAMA_MODEL=qwen2.5-coder:latest  # or llama3.1, mistral, etc.
 lynkr start
 ```
 
-**Best Ollama models for coding:**
-- `qwen2.5-coder:latest` (7B) - Optimized for code generation
-- `llama3.1:8b` - General-purpose, good balance
-- `codellama:13b` - Higher quality, needs more RAM
+**Embeddings setup (for @Codebase search):**
+```bash
+# Pull embedding model
+ollama pull nomic-embed-text
 
-*Related searches: Ollama Claude Code integration, local LLM for coding, offline AI assistant*
+# Add to .env
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+```
+
+**Best Ollama models for coding:**
+- **Chat**: `qwen2.5-coder:latest` (7B) - Optimized for code generation
+- **Chat**: `llama3.1:8b` - General-purpose, good balance
+- **Chat**: `codellama:13b` - Higher quality, needs more RAM
+- **Embeddings**: `nomic-embed-text` (137M) - Best all-around
+- **Embeddings**: `mxbai-embed-large` (335M) - Higher quality
+
+**100% local, 100% private, 100% FREE!** 🔒
+
+*Related searches: Ollama Claude Code integration, local LLM for coding, offline AI assistant, private embeddings*
+</details>
+
+<details>
+<summary><strong>Q: How do I enable @Codebase search in Cursor with Lynkr?</strong></summary>
+
+**A:** @Codebase semantic search requires embeddings. Choose ONE option:
+
+**Option 1: Ollama (100% Local, FREE)** 🔒
+```bash
+ollama pull nomic-embed-text
+# Add to .env: OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+```
+
+**Option 2: llama.cpp (100% Local, FREE)** 🔒
+```bash
+./llama-server -m nomic-embed-text-v1.5.Q4_K_M.gguf --port 8080 --embedding
+# Add to .env: LLAMACPP_EMBEDDINGS_ENDPOINT=http://localhost:8080/embeddings
+```
+
+**Option 3: OpenRouter (Cloud, ~$0.01-0.10/month)**
+```bash
+# Add to .env: OPENROUTER_API_KEY=sk-or-v1-your-key
+```
+
+**Option 4: OpenAI (Cloud, ~$0.01-0.10/month)**
+```bash
+# Add to .env: OPENAI_API_KEY=sk-your-key
+```
+
+**After configuring, restart Lynkr.** @Codebase will then work in Cursor!
+
+**Smart provider detection:**
+- Uses same provider as chat (if supported)
+- Or automatically selects first available
+- Or use `EMBEDDINGS_PROVIDER=ollama` to force a specific provider
+
+*Related searches: Cursor @Codebase setup, semantic code search, local embeddings, private codebase search*
 </details>
 
 <details>

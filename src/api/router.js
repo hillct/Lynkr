@@ -3,6 +3,7 @@ const { processMessage } = require("../orchestrator");
 const { getSession } = require("../sessions");
 const metrics = require("../metrics");
 const { createRateLimiter } = require("./middleware/rate-limiter");
+const openaiRouter = require("./openai-router");
 
 const router = express.Router();
 
@@ -382,5 +383,8 @@ router.get("/api/tokens/stats", (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Mount OpenAI-compatible endpoints for Cursor IDE support
+router.use("/v1", openaiRouter);
 
 module.exports = router;

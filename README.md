@@ -131,7 +131,7 @@ Configure Cursor IDE to use Lynkr:
    - @Codebase search: Requires [embeddings setup](documentation/embeddings.md)
 
 📖 **[Full Cursor Setup Guide](documentation/cursor-integration.md)** | **[Embeddings Configuration](documentation/embeddings.md)**
-
+---
 ## Codex CLI with Lynkr                                                                                                                                                                                                                    
 Configure Codex Cli to use Lynkr                                                                                                                                                                                                                                                
   Option 1: **Environment Variable (simplest)**                                                                                                                                                                                                          

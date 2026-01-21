@@ -5,7 +5,11 @@
       "Bash(./prime_numbers)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run test:unit:*)",
+      "Bash(node -e:*)",
+      "Bash(npm test:*)",
+      "Bash(npm rebuild:*)"
     ],
     "deny": [],
     "ask": []

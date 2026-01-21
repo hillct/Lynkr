@@ -141,7 +141,12 @@ describe("OpenAI Integration", () => {
       process.env.OPENAI_API_KEY = "sk-test-key";
       process.env.FALLBACK_ENABLED = "true";
 
-      const config = require("../src/config");
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
+
+      require("../src/config");
       const routing = require("../src/clients/routing");
 
       assert.strictEqual(routing.getFallbackProvider(), "openai");

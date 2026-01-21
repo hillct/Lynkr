@@ -58,8 +58,9 @@ describe("Azure OpenAI Routing Tests", () => {
       process.env.AZURE_OPENAI_API_KEY = "test-key";
 
       // Clear cache after env setup
-      delete require.cache[require.resolve("../src/config")];
+      delete require.cache[require.resolve("../src/config/index.js")];
       delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
 
       routing = require("../src/clients/routing");
 
@@ -82,6 +83,11 @@ describe("Azure OpenAI Routing Tests", () => {
       process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
       process.env.AZURE_OPENAI_API_KEY = "azure-key";
 
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
+
       routing = require("../src/clients/routing");
 
       // 5 tools: should prefer OpenRouter
@@ -100,6 +106,11 @@ describe("Azure OpenAI Routing Tests", () => {
       process.env.OLLAMA_MAX_TOOLS_FOR_ROUTING = "3";
       process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
       process.env.AZURE_OPENAI_API_KEY = "test-key";
+
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
 
       routing = require("../src/clients/routing");
 
@@ -122,6 +133,11 @@ describe("Azure OpenAI Routing Tests", () => {
       process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
       process.env.AZURE_OPENAI_API_KEY = "test-key";
 
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
+
       routing = require("../src/clients/routing");
 
       const fallbackProvider = routing.getFallbackProvider();
@@ -132,6 +148,11 @@ describe("Azure OpenAI Routing Tests", () => {
     it("should return true for fallback enabled", () => {
       process.env.FALLBACK_ENABLED = "true";
 
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
+
       routing = require("../src/clients/routing");
 
       assert.strictEqual(routing.isFallbackEnabled(), true);
@@ -139,6 +160,11 @@ describe("Azure OpenAI Routing Tests", () => {
 
     it("should return false when fallback disabled", () => {
       process.env.FALLBACK_ENABLED = "false";
+
+      // Clear cache after env setup
+      delete require.cache[require.resolve("../src/config/index.js")];
+      delete require.cache[require.resolve("../src/clients/routing")];
+      delete require.cache[require.resolve("../src/routing/index.js")];
 
       routing = require("../src/clients/routing");
 

@@ -8,8 +8,9 @@ describe("Routing Logic", () => {
 
   beforeEach(() => {
     // Clear module cache to get fresh instances
-    delete require.cache[require.resolve("../src/config")];
+    delete require.cache[require.resolve("../src/config/index.js")];
     delete require.cache[require.resolve("../src/clients/routing")];
+    delete require.cache[require.resolve("../src/routing/index.js")];
     delete require.cache[require.resolve("../src/clients/ollama-utils")];
 
     // Store original config

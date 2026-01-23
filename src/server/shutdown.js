@@ -19,6 +19,16 @@ class ShutdownManager {
     this.isShuttingDown = false;
     this.server = null;
     this.connections = new Set();
+    this.shutdownCallbacks = [];
+  }
+
+  /**
+   * Register a callback to be called during shutdown
+   */
+  onShutdown(callback) {
+    if (typeof callback === 'function') {
+      this.shutdownCallbacks.push(callback);
+    }
   }
 
   /**
@@ -141,6 +151,7 @@ class ShutdownManager {
         logger.warn({ err }, "Error closing budget manager");
       }
 
+ 
       // Step 6: Destroy HTTP agents
       logger.info("Step 6: Destroying HTTP agents");
       try {

@@ -10,12 +10,13 @@
 
 ## What is Lynkr?
 
-Lynkr is a proxy server that enables **Claude Code CLI** and **Cursor IDE** to work with any LLM provider - not just Anthropic.
+Lynkr is a proxy server that enables **Claude Code CLI**, **Cursor IDE**, **Codex CLI**, **ClawdBot**, and other AI coding tools to work with any LLM provider - not just Anthropic.
 
 **Key Benefits:**
-- **9+ Providers** - Databricks, AWS Bedrock, OpenRouter, Ollama, llama.cpp, Azure OpenAI, Azure Anthropic, OpenAI, LM Studio
+- **10+ Providers** - Databricks, AWS Bedrock, OpenRouter, Ollama, llama.cpp, Azure OpenAI, Azure Anthropic, OpenAI, LM Studio, MLX OpenAI Server
 - **60-80% Cost Savings** - Token optimization through smart tool selection, prompt caching, and memory deduplication
-- **100% Local Option** - Run completely offline with Ollama or llama.cpp (free)
+- **100% Local Option** - Run completely offline with Ollama, llama.cpp, or MLX (free)
+- **Remote or Local** - Connect to providers on any IP/hostname (not limited to localhost)
 - **Drop-in Replacement** - No code changes required to Claude Code CLI or Cursor
 
 ---
@@ -56,16 +57,32 @@ claude
 
 ## Supported Providers
 
-| Provider | Type | Cost |
-|----------|------|------|
-| Ollama | Local | FREE |
-| llama.cpp | Local | FREE |
-| LM Studio | Local | FREE |
-| AWS Bedrock | Cloud | $$ |
-| OpenRouter | Cloud | $ |
-| Databricks | Cloud | $$$ |
-| Azure OpenAI | Cloud | $$$ |
-| OpenAI | Cloud | $$$ |
+| Provider | Type | Cost | Platform |
+|----------|------|------|----------|
+| Ollama | Local | FREE | Cross-platform |
+| llama.cpp | Local | FREE | Cross-platform |
+| LM Studio | Local | FREE | Cross-platform |
+| MLX OpenAI Server | Local | FREE | Apple Silicon |
+| AWS Bedrock | Cloud | $$ | 100+ models |
+| OpenRouter | Cloud | $ | 100+ models |
+| Databricks | Cloud | $$$ | Claude 4.5 |
+| Azure OpenAI | Cloud | $$$ | GPT-4o, o1 |
+| Azure Anthropic | Cloud | $$$ | Claude |
+| OpenAI | Cloud | $$$ | GPT-4o, o1 |
+
+> 🌐 **Remote Support:** All endpoints support remote addresses - run models on GPU servers, share across teams.
+
+---
+
+## Supported Clients
+
+| Client | Setup |
+|--------|-------|
+| **Claude Code CLI** | `export ANTHROPIC_BASE_URL=http://localhost:8081` |
+| **Cursor IDE** | Settings → Models → Base URL: `http://localhost:8081/v1` |
+| **Codex CLI** | `export OPENAI_BASE_URL=http://localhost:8081/v1` |
+| **ClawdBot** | Copilot Proxy base URL: `http://localhost:8081/v1` |
+| **Cline / Continue.dev** | OpenAI-compatible endpoint |
 
 ---
 
@@ -73,36 +90,43 @@ claude
 
 Full documentation: [documentation/](https://github.com/vishalveerareddy123/Lynkr/tree/main/documentation)
 
+### Getting Started
 - [Installation](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/installation.md)
 - [Provider Configuration](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/providers.md)
+- [Troubleshooting](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/troubleshooting.md)
+
+### Client Integration
 - [Claude Code CLI Setup](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/claude-code-cli.md)
 - [Cursor IDE Integration](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/cursor-integration.md)
+- [Embeddings (@Codebase)](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/embeddings.md)
+
+### Features
 - [Token Optimization](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/token-optimization.md)
 - [Memory System](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/memory-system.md)
-- [Embeddings](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/embeddings.md)
+- [Headroom Compression](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/headroom.md)
 - [API Reference](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/api.md)
-- [Troubleshooting](https://github.com/vishalveerareddy123/Lynkr/blob/main/documentation/troubleshooting.md)
 
 ---
 
 ## Architecture
 
 ```
-Claude Code CLI / Cursor IDE
-            │
-            ▼
-    ┌───────────────┐
-    │  Lynkr Proxy  │  Format conversion, caching,
-    │  :8081        │  token optimization, tools
-    └───────┬───────┘
-            │
-    ┌───────┴───────┐
-    ▼               ▼
-  Local           Cloud
-  Ollama          Databricks
-  llama.cpp       AWS Bedrock
-  LM Studio       OpenRouter
-                  Azure/OpenAI
+Claude Code / Cursor / Codex / ClawdBot
+                │
+                ▼
+        ┌───────────────┐
+        │  Lynkr Proxy  │  Format conversion, caching,
+        │  :8081        │  token optimization, tools
+        └───────┬───────┘
+                │
+    ┌───────────┼───────────┐
+    ▼           ▼           ▼
+  Local       Cloud      Remote
+  ───────     ─────      ──────
+  Ollama      Databricks  GPU Server
+  llama.cpp   Bedrock     (any IP)
+  LM Studio   OpenRouter
+  MLX Server  Azure/OpenAI
 ```
 
 ---
@@ -111,11 +135,47 @@ Claude Code CLI / Cursor IDE
 
 - **Multi-Provider Support** - Switch providers without code changes
 - **Token Optimization** - 60-80% cost reduction
-- **Prompt Caching** - LRU cache with TTL
+- **Prompt Caching** - SQLite-backed LRU cache with TTL
 - **Long-Term Memory** - Titans-inspired memory system
+- **History Compression** - Smart context window management
 - **Tool Calling** - Full MCP integration
 - **Embeddings** - @Codebase semantic search
-- **Enterprise Ready** - Circuit breakers, metrics, health checks
+- **Remote Endpoints** - Connect to models on any machine
+- **Enterprise Ready** - Circuit breakers, load shedding, metrics, health checks
+
+---
+
+## Quick Config Examples
+
+**Local (Ollama)**
+```bash
+export MODEL_PROVIDER=ollama
+export OLLAMA_MODEL=qwen2.5-coder:latest
+```
+
+**Local (MLX - Apple Silicon)**
+```bash
+# Start MLX server first
+mlx-openai-server launch --model-path mlx-community/Qwen2.5-Coder-7B-Instruct-4bit --model-type lm
+
+# Configure Lynkr
+export MODEL_PROVIDER=openai
+export OPENAI_ENDPOINT=http://localhost:8000/v1/chat/completions
+export OPENAI_API_KEY=not-needed
+```
+
+**Remote (GPU Server)**
+```bash
+export MODEL_PROVIDER=ollama
+export OLLAMA_ENDPOINT=http://192.168.1.100:11434
+```
+
+**Cloud (AWS Bedrock)**
+```bash
+export MODEL_PROVIDER=bedrock
+export AWS_BEDROCK_API_KEY=your-key
+export AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+```
 
 ---
 
@@ -136,4 +196,4 @@ Apache 2.0
 
 ## Keywords
 
-`claude-code` `claude-proxy` `anthropic-api` `databricks-llm` `aws-bedrock` `openrouter` `ollama` `llama-cpp` `azure-openai` `mcp-server` `prompt-caching` `token-optimization` `ai-coding-assistant` `llm-proxy` `self-hosted-ai`
+`claude-code` `claude-proxy` `anthropic-api` `databricks-llm` `aws-bedrock` `openrouter` `ollama` `llama-cpp` `mlx` `azure-openai` `mcp-server` `prompt-caching` `token-optimization` `ai-coding-assistant` `llm-proxy` `self-hosted-ai` `cursor-ide` `codex-cli` `clawdbot`

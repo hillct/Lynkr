@@ -28,6 +28,7 @@ Lynkr is a **self-hosted proxy server** that unlocks Claude Code CLI , Cursor ID
 - 🚀 **Any LLM Provider** - Databricks, AWS Bedrock (100+ models), OpenRouter (100+ models), Ollama (local), llama.cpp, Azure OpenAI, Azure Anthropic, OpenAI, LM Studio
 - 💰 **60-80% Cost Reduction** - Built-in token optimization with smart tool selection, prompt caching, and memory deduplication
 - 🔒 **100% Local/Private** - Run completely offline with Ollama or llama.cpp
+- 🌐 **Remote or Local** - Connect to providers on any IP/hostname (not limited to localhost)
 - 🎯 **Zero Code Changes** - Drop-in replacement for Anthropic's backend
 - 🏢 **Enterprise-Ready** - Circuit breakers, load shedding, Prometheus metrics, health checks
 
@@ -259,6 +260,15 @@ export OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
 npm start
 ```
 > 💡 **Tip:** Prevent slow cold starts by keeping Ollama models loaded: `launchctl setenv OLLAMA_KEEP_ALIVE "24h"` (macOS) or set `OLLAMA_KEEP_ALIVE=24h` env var. See [troubleshooting](documentation/troubleshooting.md#slow-first-request--cold-start-warning).
+
+**Remote Ollama (GPU Server)**
+```bash
+export MODEL_PROVIDER=ollama
+export OLLAMA_ENDPOINT=http://192.168.1.100:11434  # Any IP or hostname
+export OLLAMA_MODEL=llama3.1:70b
+npm start
+```
+> 🌐 **Note:** All provider endpoints support remote addresses - not limited to localhost. Use any IP, hostname, or domain.
 
 **AWS Bedrock (100+ models)**
 ```bash

@@ -54,6 +54,50 @@ LOG_LEVEL=info
 
 ---
 
+## Remote/Network Configuration
+
+**All provider endpoints support remote addresses** - you're not limited to `localhost`. This enables powerful setups like:
+
+- 🖥️ **GPU Server**: Run Ollama/llama.cpp on a dedicated GPU machine
+- 🏢 **Team Sharing**: Multiple developers using one Lynkr instance
+- ☁️ **Hybrid**: Lynkr on local machine, models on cloud VM
+
+### Examples
+
+**Ollama on Remote GPU Server**
+```env
+MODEL_PROVIDER=ollama
+OLLAMA_ENDPOINT=http://192.168.1.100:11434    # Local network IP
+# or
+OLLAMA_ENDPOINT=http://gpu-server.local:11434  # Hostname
+# or
+OLLAMA_ENDPOINT=http://ollama.mycompany.com:11434  # Domain
+```
+
+**llama.cpp on Remote Machine**
+```env
+MODEL_PROVIDER=llamacpp
+LLAMACPP_ENDPOINT=http://10.0.0.50:8080
+```
+
+**LM Studio on Another Computer**
+```env
+MODEL_PROVIDER=lmstudio
+LMSTUDIO_ENDPOINT=http://workstation.local:1234
+```
+
+### Network Requirements
+
+| Setup | Requirement |
+|-------|-------------|
+| Same machine | `localhost` or `127.0.0.1` |
+| Local network | IP address or hostname, firewall allows port |
+| Remote/Internet | Public IP/domain, port forwarding, consider VPN/auth |
+
+> ⚠️ **Security Note**: When exposing endpoints over a network, ensure proper firewall rules and consider using a VPN or SSH tunnel for sensitive deployments.
+
+---
+
 ## Provider-Specific Configuration
 
 ### 1. AWS Bedrock (100+ Models)
@@ -316,10 +360,12 @@ See [openrouter.ai/models](https://openrouter.ai/models) for complete list with 
 
 ```env
 MODEL_PROVIDER=ollama
-OLLAMA_ENDPOINT=http://localhost:11434
+OLLAMA_ENDPOINT=http://localhost:11434  # Or any remote IP/hostname
 OLLAMA_MODEL=llama3.1:8b
 OLLAMA_TIMEOUT_MS=120000
 ```
+
+> 🌐 **Remote Support**: `OLLAMA_ENDPOINT` can be any address - `http://192.168.1.100:11434`, `http://gpu-server:11434`, etc. See [Remote/Network Configuration](#remotenetwork-configuration).
 
 #### Performance Optimization
 
@@ -415,7 +461,7 @@ Lynkr supports **native tool calling** for compatible Ollama models:
 
 ```env
 MODEL_PROVIDER=llamacpp
-LLAMACPP_ENDPOINT=http://localhost:8080
+LLAMACPP_ENDPOINT=http://localhost:8080  # Or any remote IP/hostname
 LLAMACPP_MODEL=qwen2.5-coder-7b
 LLAMACPP_TIMEOUT_MS=120000
 ```
@@ -424,6 +470,8 @@ Optional API key (for secured servers):
 ```env
 LLAMACPP_API_KEY=your-optional-api-key
 ```
+
+> 🌐 **Remote Support**: `LLAMACPP_ENDPOINT` can be any address. See [Remote/Network Configuration](#remotenetwork-configuration).
 
 #### Installation & Setup
 

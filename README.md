@@ -13,7 +13,7 @@
 
 ### Use Case
 ```
-        Cursor / Cline / Continue / Claude Code
+        Cursor / Cline / Continue / Claude Code / Clawdbot / Codex/ KiloCode
                         ↓
                        Lynkr
                         ↓

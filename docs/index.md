@@ -1,4 +1,75 @@
-<link rel="stylesheet" href="style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary Meta Tags -->
+  <title>Lynkr - Universal LLM Proxy | 12+ Providers, 60-80% Cost Savings</title>
+  <meta name="title" content="Lynkr - Universal LLM Proxy | 12+ Providers, 60-80% Cost Savings">
+  <meta name="description" content="Self-hosted proxy server for Claude Code, Cursor, and AI coding tools. Connect to Ollama, AWS Bedrock, OpenRouter, Azure, and 12+ LLM providers with 60-80% cost reduction. 100% local option available.">
+  <meta name="keywords" content="LLM proxy, Claude Code, Cursor IDE, Ollama, AWS Bedrock, OpenRouter, AI coding assistant, self-hosted AI, token optimization, prompt caching, MCP server, local LLM, GPT-4, Claude, Gemini">
+  <meta name="author" content="Vishal Veera Reddy">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://vishalveerareddy123.github.io/Lynkr/">
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#8b5cf6">
+  <meta name="msapplication-TileColor" content="#09090b">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://vishalveerareddy123.github.io/Lynkr/">
+  <meta property="og:title" content="Lynkr - Universal LLM Proxy | 12+ Providers, 60-80% Cost Savings">
+  <meta property="og:description" content="Self-hosted proxy server for Claude Code, Cursor, and AI coding tools. Connect to 12+ LLM providers with 60-80% cost reduction. Free local options with Ollama.">
+  <meta property="og:image" content="https://vishalveerareddy123.github.io/Lynkr/og-image.png">
+  <meta property="og:site_name" content="Lynkr">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://vishalveerareddy123.github.io/Lynkr/">
+  <meta name="twitter:title" content="Lynkr - Universal LLM Proxy | 12+ Providers, 60-80% Cost Savings">
+  <meta name="twitter:description" content="Self-hosted proxy server for Claude Code, Cursor, and AI coding tools. Connect to 12+ LLM providers with 60-80% cost reduction.">
+  <meta name="twitter:image" content="https://vishalveerareddy123.github.io/Lynkr/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238b5cf6'/><text x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='white'>L</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238b5cf6'/><text x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='white'>L</text></svg>">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Lynkr",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Cross-platform",
+    "description": "Self-hosted LLM proxy server that enables Claude Code, Cursor, and AI coding tools to work with any LLM provider with 60-80% cost reduction.",
+    "url": "https://github.com/vishalveerareddy123/Lynkr",
+    "downloadUrl": "https://www.npmjs.com/package/lynkr",
+    "softwareVersion": "6.0",
+    "author": {
+      "@type": "Person",
+      "name": "Vishal Veera Reddy",
+      "url": "https://github.com/vishalveerareddy123"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "50"
+    },
+    "keywords": "LLM proxy, Claude Code, Cursor, Ollama, AWS Bedrock, AI coding, self-hosted"
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
 <div class="bg-gradient"></div>
 <div class="particles"></div>
@@ -15,7 +86,7 @@
       <li><a href="#providers">Providers</a></li>
       <li><a href="#clients">Clients</a></li>
       <li><a href="#quickstart">Quick Start</a></li>
-      <li><a href="https://github.com/vishalveerareddy123/Lynkr/tree/main/documentation">Docs</a></li>
+      <li><a href="https://deepwiki.com/vishalveerareddy123/Lynkr">Docs</a></li>
     </ul>
     <div class="nav-cta">
       <a href="https://github.com/vishalveerareddy123/Lynkr" class="btn btn-secondary">
@@ -69,7 +140,7 @@
 
   <div class="hero-stats">
     <div class="hero-stat">
-      <div class="hero-stat-value">10+</div>
+      <div class="hero-stat-value">12+</div>
       <div class="hero-stat-label">Providers</div>
     </div>
     <div class="hero-stat">
@@ -146,6 +217,14 @@
           Connect to models on any machine — run inference on dedicated GPU servers and share resources across your entire team.
         </p>
       </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔀</div>
+        <h3 class="feature-title">Hierarchical Routing</h3>
+        <p class="feature-description">
+          Intelligent request routing across model tiers — automatically route simple tasks to faster models and complex ones to more capable models.
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -155,7 +234,7 @@
   <div class="container">
     <div class="section-header">
       <div class="section-tag">Integrations</div>
-      <h2 class="section-title">10+ LLM Providers</h2>
+      <h2 class="section-title">12+ LLM Providers</h2>
       <p class="section-description">
         From free local models to enterprise cloud solutions — use what works best for your use case.
       </p>
@@ -230,6 +309,20 @@
         <div class="provider-name">OpenAI</div>
         <div class="provider-type">Cloud</div>
         <span class="provider-badge paid">GPT-4o, o1</span>
+      </div>
+
+      <div class="provider-card">
+        <span class="provider-icon" style="font-weight: 900; font-size: 28px; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; width: 42px; height: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;">Z</span>
+        <div class="provider-name">z.ai</div>
+        <div class="provider-type">Cloud</div>
+        <span class="provider-badge paid">GLM MODELS</span>
+      </div>
+
+      <div class="provider-card">
+        <span class="provider-icon">💎</span>
+        <div class="provider-name">Vertex AI</div>
+        <div class="provider-type">Cloud</div>
+        <span class="provider-badge paid">GEMINI</span>
       </div>
     </div>
   </div>
@@ -458,7 +551,7 @@ claude</code></pre>
           </svg>
           View on NPM
         </a>
-        <a href="https://github.com/vishalveerareddy123/Lynkr/tree/main/documentation" class="btn btn-ghost">
+        <a href="https://deepwiki.com/vishalveerareddy123/Lynkr" class="btn btn-ghost">
           Read the Docs →
         </a>
       </div>
@@ -472,7 +565,7 @@ claude</code></pre>
   <div class="footer-links">
     <a href="https://github.com/vishalveerareddy123/Lynkr">GitHub</a>
     <a href="https://www.npmjs.com/package/lynkr">NPM</a>
-    <a href="https://github.com/vishalveerareddy123/Lynkr/tree/main/documentation">Documentation</a>
+    <a href="https://deepwiki.com/vishalveerareddy123/Lynkr">Documentation</a>
     <a href="https://github.com/vishalveerareddy123/Lynkr/issues">Issues</a>
     <a href="https://github.com/vishalveerareddy123/Lynkr/discussions">Discussions</a>
   </div>
@@ -480,3 +573,5 @@ claude</code></pre>
     Apache 2.0 License · Built by <a href="https://github.com/vishalveerareddy123">Vishal Veera Reddy</a>
   </div>
 </footer>
+</body>
+</html>

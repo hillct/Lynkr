@@ -989,6 +989,7 @@ body {
   height: 300%;
   background: radial-gradient(circle at center, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
   animation: cta-glow 10s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes cta-glow {
@@ -1008,6 +1009,7 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0.3;
+  pointer-events: none;
 }
 
 .cta-title {
@@ -1015,6 +1017,7 @@ body {
   font-weight: 800;
   margin-bottom: 20px;
   position: relative;
+  z-index: 1;
   letter-spacing: -1px;
 }
 
@@ -1023,6 +1026,7 @@ body {
   color: var(--foreground-secondary);
   margin-bottom: 40px;
   position: relative;
+  z-index: 1;
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
@@ -1034,6 +1038,7 @@ body {
   justify-content: center;
   flex-wrap: wrap;
   position: relative;
+  z-index: 1;
 }
 
 /* ===== FOOTER ===== */

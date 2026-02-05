@@ -60,6 +60,8 @@
       "Bash(claude mcp add-json:*)",
       "WebFetch(domain:ui.shadcn.com)",
       "WebFetch(domain:en.wikipedia.org)",
+      "Bash(node:*)",
+      "Bash(wc:*)",
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:community.openai.com)",
       "WebFetch(domain:madhub081011.medium.com)",

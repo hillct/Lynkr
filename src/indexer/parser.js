@@ -6,41 +6,74 @@ let JavaScript = null;
 let TypeScript = null;
 let TSX = null;
 let Python = null;
+let treeSitterAvailable = null; // null = not checked, true/false = result
+
+function isTreeSitterAvailable() {
+  if (treeSitterAvailable !== null) {
+    return treeSitterAvailable;
+  }
+  try {
+    require.resolve("tree-sitter");
+    treeSitterAvailable = true;
+    logger.info("[Parser] tree-sitter available");
+  } catch {
+    treeSitterAvailable = false;
+    logger.info("[Parser] tree-sitter not available - using babel fallback for JS/TS (Python parsing disabled)");
+  }
+  return treeSitterAvailable;
+}
 
 function getTreeSitterParser() {
+  if (!isTreeSitterAvailable()) {
+    return null;
+  }
   if (!Parser) {
-    Parser = require("tree-sitter");
+    try {
+      Parser = require("tree-sitter");
+    } catch (err) {
+      logger.warn({ err: err.message }, "[Parser] Failed to load tree-sitter");
+      treeSitterAvailable = false;
+      return null;
+    }
   }
   return Parser;
 }
 
 function getLanguageModule(language) {
-  switch (language) {
-    case "javascript":
-    case "javascript-react":
-      if (!JavaScript) {
-        JavaScript = require("tree-sitter-javascript");
-      }
-      return JavaScript;
-    case "typescript":
-      if (!TypeScript) {
-        const ts = require("tree-sitter-typescript");
-        TypeScript = ts.typescript;
-      }
-      return TypeScript;
-    case "typescript-react":
-      if (!TSX) {
-        const ts = require("tree-sitter-typescript");
-        TSX = ts.tsx;
-      }
-      return TSX;
-    case "python":
-      if (!Python) {
-        Python = require("tree-sitter-python");
-      }
-      return Python;
-    default:
-      return null;
+  if (!isTreeSitterAvailable()) {
+    return null;
+  }
+  try {
+    switch (language) {
+      case "javascript":
+      case "javascript-react":
+        if (!JavaScript) {
+          JavaScript = require("tree-sitter-javascript");
+        }
+        return JavaScript;
+      case "typescript":
+        if (!TypeScript) {
+          const ts = require("tree-sitter-typescript");
+          TypeScript = ts.typescript;
+        }
+        return TypeScript;
+      case "typescript-react":
+        if (!TSX) {
+          const ts = require("tree-sitter-typescript");
+          TSX = ts.tsx;
+        }
+        return TSX;
+      case "python":
+        if (!Python) {
+          Python = require("tree-sitter-python");
+        }
+        return Python;
+      default:
+        return null;
+    }
+  } catch (err) {
+    logger.warn({ err: err.message, language }, "[Parser] Failed to load language module");
+    return null;
   }
 }
 
@@ -55,10 +88,14 @@ const LANGUAGE_MAP = {
 };
 
 function getParser(languageKey) {
+  if (!isTreeSitterAvailable()) {
+    return null;
+  }
   const entry = LANGUAGE_MAP[languageKey];
   if (!entry) return null;
   if (!parserCache[languageKey]) {
     const ParserClass = getTreeSitterParser();
+    if (!ParserClass) return null;
     const parser = new ParserClass();
     const language = entry.getLanguage();
     if (!language) return null;
@@ -330,37 +367,77 @@ function extractPython(tree, source) {
 }
 
 function parseFile(relativePath, content, language) {
+  // Try tree-sitter first (faster, more accurate)
   const parser = getParser(language);
-  if (!parser) {
-    return null;
-  }
-  try {
-    const tree = parser.parse(content);
-    const langType = LANGUAGE_MAP[language]?.type;
-    if (langType === "javascript" || langType === "typescript") {
-      const analysis = extractJavaScript(tree, content);
-      return {
-        ...analysis,
-        language: langType,
-        definitions: analysis.symbols,
-      };
+  if (parser) {
+    try {
+      const tree = parser.parse(content);
+      const langType = LANGUAGE_MAP[language]?.type;
+      if (langType === "javascript" || langType === "typescript") {
+        const analysis = extractJavaScript(tree, content);
+        return {
+          ...analysis,
+          language: langType,
+          definitions: analysis.symbols,
+          parser: "tree-sitter",
+        };
+      }
+      if (langType === "python") {
+        const analysis = extractPython(tree, content);
+        return {
+          ...analysis,
+          language: langType,
+          definitions: analysis.symbols,
+          parser: "tree-sitter",
+        };
+      }
+    } catch (err) {
+      logger.warn({ err, file: relativePath, language }, "Tree-sitter parse failed, trying babel fallback");
     }
-    if (langType === "python") {
-      const analysis = extractPython(tree, content);
-      return {
-        ...analysis,
-        language: langType,
-        definitions: analysis.symbols,
-      };
-    }
-  } catch (err) {
-    logger.warn({ err, file: relativePath, language }, "Tree-sitter parse failed");
   }
+
+  // Fallback to Babel parser for JS/TS (pure JS, no native modules)
+  const langType = LANGUAGE_MAP[language]?.type;
+  if (langType === "javascript" || langType === "typescript") {
+    try {
+      const babelParser = require("./babel-parser");
+      const result = babelParser.parseFile(relativePath, content, language);
+      if (result) {
+        logger.debug({ file: relativePath, parser: "babel" }, "Parsed with babel fallback");
+        return result;
+      }
+    } catch (err) {
+      logger.debug({ err: err.message }, "Babel parser fallback not available");
+    }
+  }
+
   return null;
+}
+
+/**
+ * Get info about available parsers
+ */
+function getParserInfo() {
+  const treeSitter = isTreeSitterAvailable();
+  let babel = false;
+  try {
+    const babelParser = require("./babel-parser");
+    babel = babelParser.isBabelAvailable();
+  } catch {
+    babel = false;
+  }
+  return {
+    treeSitter,
+    babel,
+    jsTs: treeSitter || babel,  // JS/TS parsing available
+    python: treeSitter,          // Python only via tree-sitter
+  };
 }
 
 module.exports = {
   parseFile,
   LANGUAGE_MAP,
   getParser,
+  isTreeSitterAvailable,
+  getParserInfo,
 };

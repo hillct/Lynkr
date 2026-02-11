@@ -1,24 +1,39 @@
-const Database = require("better-sqlite3");
+let Database;
+try {
+  Database = require("better-sqlite3");
+} catch {
+  Database = null;
+}
 const path = require("path");
 const fs = require("fs");
 const logger = require("../logger");
 
 class AgentStore {
   constructor() {
-    // Use same database location as main app
-    const dbDir = path.join(process.cwd(), "data");
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+    if (!Database) {
+      this.db = null;
+      return;
     }
 
-    const dbPath = path.join(dbDir, "lynkr.db");
-    this.db = new Database(dbPath, {
-      verbose: process.env.DEBUG_SQL ? console.log : null,
-      fileMustExist: false
-    });
+    try {
+      // Use same database location as main app
+      const dbDir = path.join(process.cwd(), "data");
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+      }
 
-    this.initTables();
-    this.prepareStatements();
+      const dbPath = path.join(dbDir, "lynkr.db");
+      this.db = new Database(dbPath, {
+        verbose: process.env.DEBUG_SQL ? console.log : null,
+        fileMustExist: false
+      });
+
+      this.initTables();
+      this.prepareStatements();
+    } catch (err) {
+      logger.warn({ err: err.message }, "AgentStore: better-sqlite3 not available");
+      this.db = null;
+    }
   }
 
   initTables() {

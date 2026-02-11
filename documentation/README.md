@@ -14,11 +14,12 @@ New to Lynkr? Start here:
 
 ---
 
-## IDE Integration
+## IDE & CLI Integration
 
 Connect Lynkr to your development tools:
 
 - **[Claude Code CLI Setup](claude-code-cli.md)** - Configure Claude Code CLI to use Lynkr
+- **[Codex CLI Setup](codex-cli.md)** - Configure OpenAI Codex CLI with Lynkr (config.toml, wire_api, troubleshooting)
 - **[Cursor IDE Integration](cursor-integration.md)** - Full Cursor IDE setup with troubleshooting
 - **[Embeddings Configuration](embeddings.md)** - Enable @Codebase semantic search with 4 provider options (Ollama, llama.cpp, OpenRouter, OpenAI)
 
@@ -31,6 +32,7 @@ Understand Lynkr's capabilities:
 - **[Architecture & Features](features.md)** - System architecture, request flow, format conversion, and core capabilities
 - **[Memory System](memory-system.md)** - Titans-inspired long-term memory with surprise-based filtering and decay
 - **[Token Optimization](token-optimization.md)** - Achieve 60-80% cost reduction through smart tool selection, prompt caching, and memory deduplication
+- **[Headroom Compression](headroom.md)** - 47-92% token reduction through intelligent context compression (Smart Crusher, CCR, LLMLingua)
 - **[Tools & Execution Modes](tools.md)** - Tool calling, server vs client execution, custom tool integration, MCP support
 
 ---
@@ -68,10 +70,10 @@ Get help and contribute:
 ## Quick Navigation by Topic
 
 ### Setup & Configuration
-- [Installation](installation.md) | [Providers](providers.md) | [Claude Code](claude-code-cli.md) | [Cursor](cursor-integration.md) | [Embeddings](embeddings.md)
+- [Installation](installation.md) | [Providers](providers.md) | [Claude Code](claude-code-cli.md) | [Codex CLI](codex-cli.md) | [Cursor](cursor-integration.md) | [Embeddings](embeddings.md)
 
 ### Features & Optimization
-- [Features](features.md) | [Memory System](memory-system.md) | [Token Optimization](token-optimization.md) | [Tools](tools.md)
+- [Features](features.md) | [Memory System](memory-system.md) | [Token Optimization](token-optimization.md) | [Headroom](headroom.md) | [Tools](tools.md)
 
 ### Deployment & Production
 - [Docker](docker.md) | [Production](production.md) | [API Reference](api.md)
@@ -86,7 +88,7 @@ Get help and contribute:
 This documentation is organized into focused guides:
 
 1. **Getting Started** - Installation and basic configuration
-2. **IDE Integration** - Connect to Claude Code and Cursor
+2. **IDE & CLI Integration** - Connect to Claude Code, Codex CLI, and Cursor
 3. **Core Features** - Deep dives into capabilities
 4. **Deployment** - Production setup and operations
 5. **Support** - Troubleshooting and community resources

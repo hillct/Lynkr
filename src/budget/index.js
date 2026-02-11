@@ -1,4 +1,9 @@
-const Database = require('better-sqlite3');
+let Database;
+try {
+  Database = require('better-sqlite3');
+} catch {
+  Database = null;
+}
 const path = require('path');
 const fs = require('fs');
 const logger = require('../logger');
@@ -6,17 +11,26 @@ const logger = require('../logger');
 class BudgetManager {
   constructor(options = {}) {
     this.enabled = options.enabled !== false;
-    if (!this.enabled) return;
-
-    const dbPath = path.join(process.cwd(), 'data', 'budgets.db');
-    const dbDir = path.dirname(dbPath);
-
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+    if (!this.enabled || !Database) {
+      this.enabled = false;
+      return;
     }
 
-    this.db = new Database(dbPath);
-    this.initDatabase();
+    try {
+      const dbPath = path.join(process.cwd(), 'data', 'budgets.db');
+      const dbDir = path.dirname(dbPath);
+
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+      }
+
+      this.db = new Database(dbPath);
+      this.initDatabase();
+    } catch (err) {
+      logger.warn({ err: err.message }, "BudgetManager: better-sqlite3 not available");
+      this.enabled = false;
+      return;
+    }
 
     logger.info({ dbPath }, 'Budget manager initialized');
   }

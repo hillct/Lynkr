@@ -13,7 +13,7 @@
 
 ### Use Case
 ```
-        Cursor / Cline / Continue / Claude Code
+        Cursor / Cline / Continue / Claude Code / Clawdbot / Codex/ KiloCode
                         ↓
                        Lynkr
                         ↓
@@ -28,6 +28,7 @@ Lynkr is a **self-hosted proxy server** that unlocks Claude Code CLI , Cursor ID
 - 🚀 **Any LLM Provider** - Databricks, AWS Bedrock (100+ models), OpenRouter (100+ models), Ollama (local), llama.cpp, Azure OpenAI, Azure Anthropic, OpenAI, LM Studio
 - 💰 **60-80% Cost Reduction** - Built-in token optimization with smart tool selection, prompt caching, and memory deduplication
 - 🔒 **100% Local/Private** - Run completely offline with Ollama or llama.cpp
+- 🌐 **Remote or Local** - Connect to providers on any IP/hostname (not limited to localhost)
 - 🎯 **Zero Code Changes** - Drop-in replacement for Anthropic's backend
 - 🏢 **Enterprise-Ready** - Circuit breakers, load shedding, Prometheus metrics, health checks
 
@@ -46,10 +47,10 @@ Lynkr is a **self-hosted proxy server** that unlocks Claude Code CLI , Cursor ID
 **Option 1: NPM Package (Recommended)**
 ```bash
 # Install globally
+npm install -g pino-pretty 
 npm install -g lynkr
 
-# Or run directly with npx
-npx lynkr
+lynk start
 ```
 
 **Option 2: Git Clone**
@@ -71,6 +72,10 @@ nano .env
 npm start
 ```
 
+**Node.js Compatibility:**
+- **Node 20-24**: Full support with all features
+- **Node 25+**: Full support (native modules auto-rebuild, babel fallback for code parsing)
+
 
 
 **Option 3: Docker**
@@ -82,7 +87,7 @@ docker-compose up -d
 
 ## Supported Providers
 
-Lynkr supports **9+ LLM providers**:
+Lynkr supports **10+ LLM providers**:
 
 | Provider | Type | Models | Cost | Privacy |
 |----------|------|--------|------|---------|
@@ -95,6 +100,7 @@ Lynkr supports **9+ LLM providers**:
 | **Azure Anthropic** | Cloud | Claude models | $$$ | Cloud |
 | **OpenAI** | Cloud | GPT-4o, o1, o3 | $$$ | Cloud |
 | **LM Studio** | Local | Local models with GUI | **FREE** | 🔒 100% Local |
+| **MLX OpenAI Server** | Local | Apple Silicon (M1/M2/M3/M4) | **FREE** | 🔒 100% Local |
 
 📖 **[Full Provider Configuration Guide](documentation/providers.md)**
 
@@ -139,25 +145,92 @@ Configure Cursor IDE to use Lynkr:
 
 📖 **[Full Cursor Setup Guide](documentation/cursor-integration.md)** | **[Embeddings Configuration](documentation/embeddings.md)**
 ---
-## Codex CLI with Lynkr                                                                                                                                                                                                                    
-Configure Codex Cli to use Lynkr                                                                                                                                                                                                                                                
-  Option 1: **Environment Variable (simplest)**                                                                                                                                                                                                          
- ``` 
-export OPENAI_BASE_URL=http://localhost:8081/v1                                                                                                                                                                                                    
-export  OPENAI_API_KEY=dummy                                                                                                                                                                                                                        
-  codex 
-  ```
-                                                                                                                                                                                                                                                     
-  Option 2: **Config File (~/.codex/config.toml)**  
-  ```                     
-  model_provider = "lynkr"                                                                                                                                                                                                                           
-                                                                                                                                                                                                                                                     
-  [model_providers.lynkr]                                                                                                                                                                                                                            
-  name = "Lynkr Proxy"                                                                                                                                                                                                                               
-  base_url = "http://localhost:8081/v1"                                                                                                                                                                                                              
-  env_key = "OPENAI_API_KEY"     
-  ```
-                                                          
+## Codex CLI Integration
+
+Configure [OpenAI Codex CLI](https://github.com/openai/codex) to use Lynkr as its backend.
+
+### Option 1: Environment Variables (Quick Start)
+
+```bash
+export OPENAI_BASE_URL=http://localhost:8081/v1
+export OPENAI_API_KEY=dummy
+
+codex
+```
+
+### Option 2: Config File (Recommended)
+
+Edit `~/.codex/config.toml`:
+
+```toml
+# Set Lynkr as the default provider
+model_provider = "lynkr"
+model = "gpt-4o"
+
+# Define the Lynkr provider
+[model_providers.lynkr]
+name = "Lynkr Proxy"
+base_url = "http://localhost:8081/v1"
+wire_api = "responses"
+
+# Optional: Trust your project directories
+[projects."/path/to/your/project"]
+trust_level = "trusted"
+```
+
+### Configuration Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `model_provider` | Active provider name | `"lynkr"` |
+| `model` | Model to request (mapped by Lynkr) | `"gpt-4o"`, `"claude-sonnet-4-5"` |
+| `base_url` | Lynkr endpoint | `"http://localhost:8081/v1"` |
+| `wire_api` | API format (`responses` or `chat`) | `"responses"` |
+| `trust_level` | Project trust (`trusted`, `sandboxed`) | `"trusted"` |
+
+### Remote Lynkr Server
+
+To connect Codex to a remote Lynkr instance:
+
+```toml
+[model_providers.lynkr-remote]
+name = "Remote Lynkr"
+base_url = "http://192.168.1.100:8081/v1"
+wire_api = "responses"
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Same response for all queries | Disable semantic cache: `SEMANTIC_CACHE_ENABLED=false` |
+| Tool calls not executing | Increase threshold: `POLICY_TOOL_LOOP_THRESHOLD=15` |
+| Slow first request | Keep Ollama loaded: `OLLAMA_KEEP_ALIVE=24h` |
+| Connection refused | Ensure Lynkr is running: `npm start` |
+
+> **Note:** Codex uses the OpenAI Responses API format. Lynkr automatically converts this to your configured provider's format.
+
+---
+
+## ClawdBot Integration
+
+Lynkr supports [ClawdBot](https://github.com/openclaw/openclaw) via its OpenAI-compatible API. ClawdBot users can route requests through Lynkr to access any supported provider.
+
+**Configuration in ClawdBot:**
+| Setting | Value |
+|---------|-------|
+| Model/auth provider | `Copilot` |
+| Copilot auth method | `Copilot Proxy (local)` |
+| Copilot Proxy base URL | `http://localhost:8081/v1` |
+| Model IDs | Any model your Lynkr provider supports |
+
+**Available models** (depending on your Lynkr provider):
+`gpt-5.2`, `gpt-5.1-codex`, `claude-opus-4.5`, `claude-sonnet-4.5`, `claude-haiku-4.5`, `gemini-3-pro`, `gemini-3-flash`, and more.
+
+> 🌐 **Remote Support**: ClawdBot can connect to Lynkr on any machine - use any IP/hostname in the Proxy base URL (e.g., `http://192.168.1.100:8081/v1` or `http://gpu-server:8081/v1`).
+
+---
+
 ## Lynkr also supports  Cline, Continue.dev and other OpenAI compatible tools.
 ---
 
@@ -168,14 +241,16 @@ export  OPENAI_API_KEY=dummy
 - ⚙️ **[Provider Configuration](documentation/providers.md)** - Complete setup for all 9+ providers
 - 🎯 **[Quick Start Examples](documentation/installation.md#quick-start-examples)** - Copy-paste configs
 
-### IDE Integration
+### IDE & CLI Integration
 - 🖥️ **[Claude Code CLI Setup](documentation/claude-code-cli.md)** - Connect Claude Code CLI
+- 🤖 **[Codex CLI Setup](documentation/codex-cli.md)** - Configure OpenAI Codex CLI with config.toml
 - 🎨 **[Cursor IDE Setup](documentation/cursor-integration.md)** - Full Cursor integration with troubleshooting
 - 🔍 **[Embeddings Guide](documentation/embeddings.md)** - Enable @Codebase semantic search (4 options: Ollama, llama.cpp, OpenRouter, OpenAI)
 
 ### Features & Capabilities
 - ✨ **[Core Features](documentation/features.md)** - Architecture, request flow, format conversion
 - 🧠 **[Memory System](documentation/memory-system.md)** - Titans-inspired long-term memory
+- 🗃️ **[Semantic Cache](#semantic-cache)** - Cache responses for similar prompts
 - 💰 **[Token Optimization](documentation/token-optimization.md)** - 60-80% cost reduction strategies
 - 🔧 **[Tools & Execution](documentation/tools.md)** - Tool calling, execution modes, custom tools
 
@@ -213,6 +288,33 @@ export  OPENAI_API_KEY=dummy
 - ✅ **Memory System** - Titans-inspired long-term memory with surprise-based filtering
 - ✅ **Tool Calling** - Full tool support with server and passthrough execution modes
 - ✅ **Production Ready** - Battle-tested with 400+ tests, observability, and error resilience
+- ✅ **Node 20-25 Support** - Works with latest Node.js versions including v25
+- ✅ **Semantic Caching** - Cache responses for similar prompts (requires embeddings)
+
+---
+
+## Semantic Cache
+
+Lynkr includes an optional semantic response cache that returns cached responses for semantically similar prompts, reducing latency and costs.
+
+**Enable Semantic Cache:**
+```bash
+# Requires an embeddings provider (Ollama recommended)
+ollama pull nomic-embed-text
+
+# Add to .env
+SEMANTIC_CACHE_ENABLED=true
+SEMANTIC_CACHE_THRESHOLD=0.95
+OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
+OLLAMA_EMBEDDINGS_ENDPOINT=http://localhost:11434/api/embeddings
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `SEMANTIC_CACHE_ENABLED` | `false` | Enable/disable semantic caching |
+| `SEMANTIC_CACHE_THRESHOLD` | `0.95` | Similarity threshold (0.0-1.0) |
+
+> **Note:** Without a proper embeddings provider, the cache uses hash-based fallback which may cause false matches. Use Ollama with `nomic-embed-text` for best results.
 
 ---
 
@@ -258,6 +360,29 @@ export OLLAMA_MODEL=qwen2.5-coder:latest
 export OLLAMA_EMBEDDINGS_MODEL=nomic-embed-text
 npm start
 ```
+> 💡 **Tip:** Prevent slow cold starts by keeping Ollama models loaded: `launchctl setenv OLLAMA_KEEP_ALIVE "24h"` (macOS) or set `OLLAMA_KEEP_ALIVE=24h` env var. See [troubleshooting](documentation/troubleshooting.md#slow-first-request--cold-start-warning).
+
+**Remote Ollama (GPU Server)**
+```bash
+export MODEL_PROVIDER=ollama
+export OLLAMA_ENDPOINT=http://192.168.1.100:11434  # Any IP or hostname
+export OLLAMA_MODEL=llama3.1:70b
+npm start
+```
+> 🌐 **Note:** All provider endpoints support remote addresses - not limited to localhost. Use any IP, hostname, or domain.
+
+**MLX OpenAI Server (Apple Silicon)**
+```bash
+# Terminal 1: Start MLX server
+mlx-openai-server launch --model-path mlx-community/Qwen2.5-Coder-7B-Instruct-4bit --model-type lm
+
+# Terminal 2: Start Lynkr
+export MODEL_PROVIDER=openai
+export OPENAI_ENDPOINT=http://localhost:8000/v1/chat/completions
+export OPENAI_API_KEY=not-needed
+npm start
+```
+> 🍎 **Apple Silicon optimized** - Native MLX performance on M1/M2/M3/M4 Macs. See [MLX setup guide](documentation/providers.md#10-mlx-openai-server-apple-silicon).
 
 **AWS Bedrock (100+ models)**
 ```bash

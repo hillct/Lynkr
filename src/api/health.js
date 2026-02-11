@@ -1,7 +1,13 @@
-const Database = require("better-sqlite3");
+let Database;
+try {
+  Database = require("better-sqlite3");
+} catch {
+  Database = null;
+}
 const { invokeModel } = require("../clients/databricks");
 const logger = require("../logger");
 const config = require("../config");
+const { getHeadroomManager } = require("../headroom");
 
 /**
  * Health check endpoints
@@ -65,6 +71,32 @@ async function readinessCheck(req, res) {
     allHealthy = false;
   }
 
+  // Check Headroom (if enabled)
+  if (config.headroom?.enabled) {
+    try {
+      const headroomManager = getHeadroomManager();
+      const headroomHealth = await headroomManager.getHealth();
+      checks.headroom = {
+        healthy: headroomHealth.healthy,
+        enabled: headroomHealth.enabled,
+        service: headroomHealth.service?.available ? "available" : "unavailable",
+        docker: headroomHealth.docker?.running ? "running" : "stopped",
+        error: headroomHealth.error,
+      };
+      // Don't fail overall health if Headroom is unavailable
+      // It's a non-critical service - compression will be skipped
+      if (!headroomHealth.healthy) {
+        checks.headroom.note = "Compression will be skipped";
+      }
+    } catch (err) {
+      checks.headroom = {
+        healthy: false,
+        error: err.message,
+        note: "Compression will be skipped",
+      };
+    }
+  }
+
   // Optional: Check provider (can be slow)
   if (req.query.deep === "true") {
     const provider = config.modelProvider?.type || "databricks";
@@ -106,6 +138,10 @@ async function checkDatabase() {
     const dbPath = config.sessionStore?.dbPath;
     if (!dbPath) {
       return { healthy: true, note: "No database configured" };
+    }
+
+    if (!Database) {
+      return { healthy: true, note: "better-sqlite3 not available, skipping database check" };
     }
 
     // Quick query to verify database is accessible
